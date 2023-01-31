@@ -4,14 +4,14 @@ using UnityEngine;
 
 public class River : MonoBehaviour
 {
-    private const int speedPenaltyInRiver = 250;
+    private const int speedPenaltyInRiver = 150;
     private const int speedPenaltyInRiverForAI = 2;
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("Player"))
         {
-            collision.gameObject.GetComponent<PlayerInfo>()._eventSpeed -= speedPenaltyInRiver;
+            collision.gameObject.GetComponent<PlayerInfo>().AddEventSpeedValue(-speedPenaltyInRiver);
         }
         if (collision.gameObject.CompareTag("AI"))
         {
@@ -23,7 +23,7 @@ public class River : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Player"))
         {
-            collision.gameObject.GetComponent<PlayerInfo>()._eventSpeed += speedPenaltyInRiver;
+            collision.gameObject.GetComponent<PlayerInfo>().AddEventSpeedValue(+speedPenaltyInRiver);
         }
         if (collision.gameObject.CompareTag("AI"))
         {

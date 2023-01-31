@@ -27,7 +27,7 @@ TagManager:
   - Magnetic
   - River
   - AI
-  - 
+  - RealMiniMap
   - 
   - 
   - 
@@ -58,6 +58,9 @@ TagManager:
   - name: Item
     uniqueID: 3935444385
     locked: 0
+  - name: Object
+    uniqueID: 1647987347
+    locked: 0
   - name: Player
     uniqueID: 1187805785
     locked: 0
@@ -67,8 +70,8 @@ TagManager:
   - name: Bullet
     uniqueID: 1575249881
     locked: 0
-  - name: Object
-    uniqueID: 1647987347
+  - name: Tree
+    uniqueID: 1940286447
     locked: 0
   - name: BombBullet
     uniqueID: 663355231

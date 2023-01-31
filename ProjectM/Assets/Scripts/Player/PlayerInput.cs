@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Photon.Pun;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class PlayerInput : MonoBehaviourPun
 {
@@ -19,8 +20,12 @@ public class PlayerInput : MonoBehaviourPun
             return;
         }
 
+        if (EventSystem.current.IsPointerOverGameObject() == false)
+        {
+            attack = Input.GetMouseButton(0);
+        }
+
         reload = Input.GetKeyDown(KeyCode.R);
-        attack = Input.GetMouseButton(0);
         acquire = Input.GetKeyDown(KeyCode.F);
 
         slots[0] = Input.GetKeyDown(KeyCode.Alpha1);

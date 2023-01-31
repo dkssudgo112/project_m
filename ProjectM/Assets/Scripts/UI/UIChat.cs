@@ -50,7 +50,7 @@ public class UIChat : MonoBehaviourPun
 
     public void CreateChatPrefab(string msg)
     {
-        UIManager._Instance.RebuildLayout(_textView.GetComponent<RectTransform>());
+        UIManager.Instance.RebuildLayout(_textView.GetComponent<RectTransform>());
 
         GameObject chat = Instantiate(_chatPrefab);
         chat.transform.SetParent(_textView.transform);
@@ -60,12 +60,12 @@ public class UIChat : MonoBehaviourPun
 
     public void Send()
     {
-        if (_chatInput.text == "")
+        if (OutOfRangeMessage() == true)
         {
             return;
         }
 
-        string name = UIManager._Instance.MakeBold(PlayerManager.GetName());
+        string name = UIManager.Instance.MakeBold(PlayerManager.Instance.GetName());
         string msg = $"{name} : {_chatInput.text}";
         _photonView.RPC("RPC_Send", RpcTarget.AllBuffered, msg);
         _chatInput.text = "";
@@ -80,6 +80,7 @@ public class UIChat : MonoBehaviourPun
         }
 
         CreateChatPrefab(msg);
+        Invoke("OffChat", 3f);
     }
 
     public void InteractEnterKey(bool enabled)
@@ -126,4 +127,8 @@ public class UIChat : MonoBehaviourPun
             line.color = whiteOffColor;
         }
     }
+
+    private bool OutOfRangeMessage() =>
+        _chatInput.text == "";
+        //|| _chatInput.text.Length > ConstNums.maxTextLength;
 }

@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c876468a60b24c4ea17c00fa3e85f6f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _otherCamera: {fileID: 0}
 --- !u!114 &247072619
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -112,9 +113,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ef1415cb64664c4b8aed23460194e52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _prevPlayerCount: 0
+  _gameEnd: 0
+  _playerCount: 0
   _maxPlayers: 0
+  _currentAlive: 0
   _networkTime: 0
+  _seed: 0
+  _currentPhase: 0
 --- !u!114 &652179169
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -138,50 +143,6 @@ MonoBehaviour:
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
---- !u!1 &1182997447704391966
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1891540446810182129}
-  - component: {fileID: 6624780725340721324}
-  m_Layer: 0
-  m_Name: CameraManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1891540446810182129
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1182997447704391966}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4296716733017075825}
-  m_RootOrder: -1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6624780725340721324
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1182997447704391966}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 81a28b84163621644ad738263e51d3b1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &4296716733017075826
 GameObject:
   m_ObjectHideFlags: 0
@@ -211,13 +172,13 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4296716734444237680}
+  - {fileID: 8922309371836436461}
   - {fileID: 4296716734363546793}
   - {fileID: 1339607727}
   - {fileID: 247072618}
   - {fileID: 901809820}
-  - {fileID: 1891540446810182129}
   m_Father: {fileID: 0}
-  m_RootOrder: 5
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4296716734363546794
 GameObject:
@@ -287,7 +248,7 @@ MonoBehaviour:
     size: 5
   - name: Grenade
     prefab: {fileID: 6595566775085116038, guid: afceb468cf358184eac335d545d527fc, type: 3}
-    size: 5
+    size: 25
   - name: WaterEffect
     prefab: {fileID: 673070289372146744, guid: 6914290507e911741954a5397327cee0, type: 3}
     size: 10
@@ -336,24 +297,75 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c70616939a1c19498d769eae8c0cc53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _itemPrefab: {fileID: 2261185245501592083, guid: 23fc837fa478147489f906f712fa3eeb, type: 3}
+  _itemDataPath: /ItemData.json
+  _weaponDataPath: /WeaponData.json
+  _weaponFirstID: 100
+  _itemSpawnPos: 500
+--- !u!1 &4863321957288029818
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8922309371836436461}
+  - component: {fileID: 4496972256622309470}
+  m_Layer: 0
+  m_Name: DropItemManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8922309371836436461
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4863321957288029818}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4296716733017075825}
+  m_RootOrder: -1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4496972256622309470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4863321957288029818}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23bb6698b7502c6479c42dbce55632a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   _dropTypeList:
     itemList:
-    - item: 1
-      weight: 5
-    - item: 2
-      weight: 1
-    - item: 3
-      weight: 2
-    - item: 4
-      weight: 2
-    - item: 5
-      weight: 3
-    - item: 6
-      weight: 1
-  _itemSpawnPos: 500
-  _bulletDropDistance: 0.5
+    - _item: 0
+      _weight: 5
+    - _item: 1
+      _weight: 1
+    - _item: 2
+      _weight: 2
+    - _item: 3
+      _weight: 2
+    - _item: 4
+      _weight: 3
+    - _item: 5
+      _weight: 1
+  _radius: 0.8
+  _regionSize: {x: 5, y: 5}
+  _rejectionSamples: 10
+  _adjustedPosOffset: -5
+  _bulletDropDistance: 0.8
   _minBulletDropCount: 10
-  _itemPrefab: {fileID: 2261185245501592083, guid: 23fc837fa478147489f906f712fa3eeb, type: 3}
 --- !u!1001 &8100128048287062135
 PrefabInstance:
   m_ObjectHideFlags: 0

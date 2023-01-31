@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6532857801559637763}
   - component: {fileID: 305009517415534204}
   - component: {fileID: 305009517415534205}
+  - component: {fileID: 1059646081170512911}
   m_Layer: 5
   m_Name: GuidePrefab
   m_TagString: Untagged
@@ -60,7 +61,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe083442f0842cf4ca7940a03fefc2de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _fadeIn: 1
+  _fadeOut: 1
   _fadeTime: 2
+  _delayTime: 4
+  _maxAlpha: 1
+  _minAlpha: 0
 --- !u!114 &305009517415534204
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -75,7 +81,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -115,7 +121,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
+  m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -164,3 +170,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HorizontalFit: 2
   m_VerticalFit: 2
+--- !u!225 &1059646081170512911
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 305009517415534207}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0

@@ -14,16 +14,13 @@ public class BombFog : MonoBehaviour
     private Vector2 _pos = new Vector2();
     private float _attackRange = 0;
 
-
-
     private void Update()
     {
         
         RefrestSizeBomb();
         
-        if (Vector2.Distance(_dir + _pos, transform.position) > _attackRange)
+        if (Vector2.Distance(_pos, transform.position) > _attackRange)
         {
-            
             ObjectPoolManager.AllocObject("Smoke", transform.position);
 
             transform.localScale = new Vector3(basicSizeBullet, basicSizeBullet, transform.localScale.z);
@@ -39,17 +36,20 @@ public class BombFog : MonoBehaviour
         CancelInvoke();
     }
 
-    public void SetData(object[] ownerInfo, Vector2 dir, Vector2 pos, float damageToPlayer, float damageToObject, float attackRange, float fallOff, bool isBomb)
+    public void SetData(object[] ownerInfo, Vector2 dir, Vector2 pos, float damageToPlayer, float damageToObject, float attackRange)
     {
         this._dir = dir;
+        if (dir.magnitude == 0)
+        {
+            this._dir = new Vector3(1, 1, 0);
+        }
         this._pos = pos;
         this._attackRange = attackRange;
- 
     }
 
     public void RefrestSizeBomb()
     {
-        if (Vector2.Distance(_dir + _pos, transform.position) < _attackRange / 2.0f)
+        if (Vector2.Distance(_pos, transform.position) < _attackRange / 2.0f)
         {
             if (transform.localScale.x < sizeMaxBullet)
             {

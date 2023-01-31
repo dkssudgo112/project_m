@@ -1,8 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
-using Photon.Realtime;
 
 public class PlayerSpawner : MonoBehaviourPun
 {
@@ -14,7 +11,7 @@ public class PlayerSpawner : MonoBehaviourPun
     private PhotonView _photonView = null;
 
     private int _idx = 0;
-    private int _seed = 0;
+    public int _rand = 0;
     private int _actorNumber = 0;
 
     private void Awake()
@@ -24,26 +21,26 @@ public class PlayerSpawner : MonoBehaviourPun
 
     void Start()
     {
-        if (PhotonNetwork.IsMasterClient)
+        if (PhotonNetwork.IsMasterClient == true)
         {
-            _seed = Random.Range(0, 66536);
-            _photonView.RPC("RPC_RandomizeState", RpcTarget.AllBufferedViaServer, _seed);
+            _rand = Random.Range(0, 66536);
+            _photonView.RPC("RPC_RandomizeState", RpcTarget.AllBufferedViaServer, _rand);
         }
-
-        _actorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
-        _idx = (_actorNumber + Random.Range(0, 66536)) % ConstNums.maxPlayers;
-        _playerPrefab = PhotonNetwork.Instantiate("player_1", Vector3.zero, Quaternion.identity);
-        selectPosition(_idx);
     }
-
-    private void selectPosition(int index)
+    
+    private void SpawnPlayer()
     {
-        _playerPrefab.transform.position = _startPoints[index].position;
+        _actorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
+        _idx = (_actorNumber + _rand) % ConstNums.maxPlayers;
+        _playerPrefab = PhotonNetwork.Instantiate("player_1", Vector3.zero, Quaternion.identity);
+        _playerPrefab.transform.position = _startPoints[_idx].position;
     }
 
     [PunRPC]
-    void RPC_RandomizeState(int seed)
+    public void RPC_RandomizeState(int rand)
     {
-        Random.InitState(seed);
+        _rand = rand;
+
+        SpawnPlayer();
     }
 }

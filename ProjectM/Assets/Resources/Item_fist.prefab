@@ -46,32 +46,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46378e15d1329454c9d5133c489ce40e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  id: 0
-  itemName: Fist
-  type: 2
-  spritePath: 
-  toolTip: 
-  stackSize: 0
-  itemCount: 0
   itemData:
-    bulletType: 0
-    bulletCount: 0
+    id: 0
+    viewID: 0
+    itemName: Fist
+    itemType: 1
+    spritePath: 
+    toolTip: 
+    poolSize: 0
     itemCount: 0
+    bulletType: 0
     recoverType: 0
     recoverValue: 0
     usingLatency: 0
-    defensiveType: 0
+    defensiveType: -1
     defensive: 0
     level: 0
     lensPower: 0
   weaponData:
+    id: 0
     equipSpeedPenalty: 0
     atkSpeedPenalty: 0
     loadSpeedPenalty: 0
-    atkLatency: 0
+    atkLatency: 0.1
     canAuto: 0
-    damageToPlayer: 0
-    damageToObject: 0
+    damageToPlayer: 30
+    damageToObject: 30
     attackRange: 0
     fallOff: 0
     bulletType: 0
@@ -79,16 +79,7 @@ MonoBehaviour:
     loadedTime: 0
     costBullet: 0
     isBomb: 0
-  attackLatency: 0.1
-  canAuto: 0
-  damageToPlayer: 30
-  damageToObject: 30
-  attackRange: 0
-  fallOff: 0
-  isFire: 0
-  equipSpeedPenalty: 0
-  atkSpeedPenalty: 0
-  loadSpeedPenalty: 0
+    throwType: -1
 --- !u!212 &3963166642238770861
 SpriteRenderer:
   m_ObjectHideFlags: 0

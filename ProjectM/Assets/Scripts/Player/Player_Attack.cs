@@ -8,7 +8,7 @@ public partial class Player
     // Attack() ~
     private void Attack()
     {
-        switch (_info.GetWeaponInSlot(_curSlot).type)
+        switch (_info.GetWeaponInSlot(_curSlot).itemData.itemType)
         {
             case ItemType.WEAPONGUN:
                 {
@@ -28,12 +28,10 @@ public partial class Player
                 }
             case ItemType.WEAPONTHROW:
                 {
-                    Debug.LogWarning($"ThrowWeapon : ");
                     if (CanAttackThrow() == true)
                     {
                         AttackThrow();
                     }
-                    Debug.Log("User Want to Attack By WeaponThrow");
                     break;
                 }
             default:
@@ -48,7 +46,7 @@ public partial class Player
     {
         if (_canFire[_curSlot] == true && _state != State.RELOADING)
         {
-            if (_info._loadedBullet[_curSlot] > 0)
+            if (_info.GetLoadedBullet(_curSlot) > 0)
             {
                 return true;
             }
@@ -59,16 +57,16 @@ public partial class Player
         }
         else
         {
-            Debug.Log("Can't Attack");
+            //Debug.Log("Can't Attack");
         }
         return false;
     }
 
     private bool CanAttackThrow()
     {
-        if (_canFire[ConstNums.throwWeaponIndex] == true && _state != State.ATTACKLATENCY)
+        if (_canFire[ConstNums.weaponThrowIndex] == true && _state != State.ATTACKLATENCY)
         {
-            if (_info.IsNullThrowWeaponSlot() == true)
+            if (_info.IsNullWeaponThrowSlot() == true)
             {
                 return false;
             }
@@ -76,7 +74,7 @@ public partial class Player
         }
         else
         {
-            Debug.Log("Can't Attack");
+            //Debug.Log("Can't Attack");
         }
         return false;
     }
@@ -86,13 +84,15 @@ public partial class Player
         StopAction();
 
         _canFire[_curSlot] = false;
-        _info._loadedBullet[_curSlot]--;
-        OwnerInfo bulletOwner = new OwnerInfo(PlayerManager.GetName(), _info.GetWeaponInSlot(_curSlot).itemName);
-
+        _info.AddLoadedBulletValue(_curSlot, -1);
+        OwnerInfo bulletOwner =
+            new OwnerInfo(PlayerManager.Instance.GetName(), _info.GetWeaponInSlot(_curSlot).itemData.itemName, PlayerManager.Instance.GetID());
+        
         // ~ Shot()에서 이동
         WeaponGun gun = _info.GetWeaponGunInSlot(_curSlot);
         if (gun.name == "firegun")
         {
+            
             _photonView.RPC("FlameShot", RpcTarget.AllBufferedViaServer,
                 bulletOwner.GetObjects(), CalcAttackDir(), transform.position, transform.rotation);
         }
@@ -100,17 +100,35 @@ public partial class Player
         {
 
             _photonView.RPC("Shot", RpcTarget.AllBufferedViaServer,
-               bulletOwner.GetObjects(), CalcAttackDir(), transform.position, gun.damageToPlayer, gun.damageToObject,
-               Vector3.Distance(_input.mouseVec, transform.position), gun.fallOff, gun.isBomb);
+               bulletOwner.GetObjects(), CalcAttackDir(), transform.position, gun.weaponData.damageToPlayer, gun.weaponData.damageToObject,
+               Vector3.Distance(_input.mouseVec, transform.position), gun.weaponData.fallOff, gun.weaponData.isBomb);
         }
         else
         {
             _photonView.RPC("Shot", RpcTarget.AllBufferedViaServer,
-                bulletOwner.GetObjects(), CalcAttackDir(), transform.position, gun.damageToPlayer, gun.damageToObject,
-                gun.attackRange, gun.fallOff, gun.isBomb);
+                bulletOwner.GetObjects(), CalcAttackDir(), transform.position, gun.weaponData.damageToPlayer, gun.weaponData.damageToObject,
+                gun.weaponData.attackRange, gun.weaponData.fallOff, gun.weaponData.isBomb);
         }
 
-        if (gun.name != "firegun" && gun.name != "rocketlauncher")
+        if (gun.name == "m4a1" || gun.name == "scar")
+        {
+            _audioSource.Stop();
+            if (_audioSource.isPlaying == false)
+            {
+                _audioSource.clip = _audioGunAK;
+                _audioSource.PlayOneShot(_audioGunAK);
+            }
+        }
+        else if (gun.name == "firegun" || gun.name == "rocketlauncher")
+        {
+            _audioSource.Stop();
+            if (_audioSource.isPlaying == false)
+            {
+                _audioSource.clip = _audioGunBomb;
+                _audioSource.PlayOneShot(_audioGunBomb);
+            }
+        }
+        else
         {
             _audioSource.Stop();
             if (_audioSource.isPlaying == false)
@@ -119,8 +137,9 @@ public partial class Player
                 _audioSource.PlayOneShot(_audioGun);
             }
         }
+        
 
-        HUDUpdate_slotBullet();
+        HUDRefreshSlotBullet();
         StartCoroutine($"AttackLatency_{_curSlot}");
 
         //총기에 현재 장전된 총알이 0발이고, 그 형태의 총알이 있다면 자동으로 장전을 시작해준다.
@@ -131,7 +150,8 @@ public partial class Player
     {
         StopAction();
 
-        OwnerInfo attackOwner = new OwnerInfo(PlayerManager.GetName(), _info.GetWeaponInSlot(_curSlot).itemName);
+        OwnerInfo attackOwner =
+            new OwnerInfo(PlayerManager.Instance.GetName(), _info.GetWeaponInSlot(_curSlot).itemData.itemName, PlayerManager.Instance.GetID());
         
 
         _anim.SetTrigger("AttackSub");
@@ -147,74 +167,68 @@ public partial class Player
             {
                 if (collider.gameObject.TryGetComponent(out target))
                 {
-                    //target.TakeDamage(attackOwner.GetObjects(), _info._fist.damageToPlayer, _info._fist.damageToObject, CalcAttackDir(), true);
-                    target.TakeDamage(attackOwner.GetObjects(), _info.GetWeaponInSlot(_curSlot).damageToPlayer, _info.GetWeaponInSlot(_curSlot).damageToObject, CalcAttackDir(), true);
+                    target.TakeDamage(attackOwner.GetObjects(), _info.GetWeaponInSlot(_curSlot).weaponData.damageToPlayer, _info.GetWeaponInSlot(_curSlot).weaponData.damageToObject, CalcAttackDir(), true);
                 }
             }
             if (collider.tag == "Player" || collider.tag == "AI")
             {
                 if (collider.gameObject.TryGetComponent(out target))
                 {
-                    //target.TakeDamage(attackOwner.GetObjects(), _info._fist.damageToPlayer, _info._fist.damageToObject, (Vector2)new Vector2(0, 0), true);
-                    target.TakeDamage(attackOwner.GetObjects(), _info.GetWeaponInSlot(_curSlot).damageToPlayer, _info.GetWeaponInSlot(_curSlot).damageToObject, CalcAttackDir(), true);
+                    target.TakeDamage(attackOwner.GetObjects(), _info.GetWeaponInSlot(_curSlot).weaponData.damageToPlayer, _info.GetWeaponInSlot(_curSlot).weaponData.damageToObject, CalcAttackDir(), true);
                 }
             }
         }
-        _photonView.RPC("RPC_HandAttack", RpcTarget.Others, attackOwner.GetObjects(), _info.GetWeaponInSlot(_curSlot).damageToPlayer, _info.GetWeaponInSlot(_curSlot).damageToObject);
+        _photonView.RPC("RPC_HandAttack", RpcTarget.Others, attackOwner.GetObjects(), _info.GetWeaponInSlot(_curSlot).weaponData.damageToPlayer, _info.GetWeaponInSlot(_curSlot).weaponData.damageToObject);
 
         StartCoroutine("AttackLatency_" + _curSlot);
     }
 
     private void AttackThrow()
     {
-        Debug.LogWarning($"ThrowWeapon : AttackThrow");
         StopAction();
         _state = State.ATTACKING;
-        _canFire[ConstNums.throwWeaponIndex] = false;
-        OwnerInfo throwOwner = new OwnerInfo(PlayerManager.GetName(), _info.GetWeaponInSlot(_curSlot).itemName);
+        _canFire[ConstNums.weaponThrowIndex] = false;
+        OwnerInfo throwOwner =
+            new OwnerInfo(PlayerManager.Instance.GetName(), _info.GetWeaponInSlot(_curSlot).itemData.itemName, PlayerManager.Instance.GetID());
         WeaponThrow thr = _info.GetWeaponInSlot(_curSlot).GetComponent<WeaponThrow>();
 
-        if (thr.throwType == ThrowType.GRENADE)
+        if (thr.weaponData.throwType == ThrowType.GRENADE)
         {
-            var gre = ObjectPoolManager.AllocObject<BombBullet>("Grenade", transform.position + CalcAttackDir());
-            gre.transform.position = transform.position + CalcAttackDir();
-            gre.SetData(throwOwner.GetObjects(), CalcAttackDir(), transform.position, thr.damageToPlayer, thr.damageToObject,
-                   Vector3.Distance(_input.mouseVec, transform.position), thr.fallOff, true);
+            _photonView.RPC("GreThrow", RpcTarget.AllBufferedViaServer,
+               throwOwner.GetObjects(), CalcAttackDir(), transform.position, thr.weaponData.damageToPlayer, thr.weaponData.damageToObject, Vector3.Distance(_input.mouseVec, transform.position));
         }
-        else if (thr.throwType == ThrowType.FOG)
+        else if (thr.weaponData.throwType == ThrowType.FOG)
         {
-            var fog = ObjectPoolManager.AllocObject<BombFog>("Bombfog", transform.position + CalcAttackDir());
-            fog.transform.position = transform.position + CalcAttackDir();
-            fog.SetData(throwOwner.GetObjects(), CalcAttackDir(), transform.position, thr.damageToPlayer, thr.damageToObject,
-                   Vector3.Distance(_input.mouseVec, transform.position), thr.fallOff, true);
+            _photonView.RPC("FogThrow", RpcTarget.AllBufferedViaServer,
+               throwOwner.GetObjects(), CalcAttackDir(), transform.position, thr.weaponData.damageToPlayer, thr.weaponData.damageToObject, Vector3.Distance(_input.mouseVec, transform.position));
         }
 
-        _info.UseThrowWeapon(_curSlot);
-        if (_info.IsNullWeaponSlot(_curSlot) == true)
+        _info.UseWeaponThrow(_curSlot);
+        if (_info._slotWeapon[_curSlot].GetItemCount() == 0)
         {
-            TrySwapOtherThrowWeapon();
+            if (_info.IsNullOtherWeaponThrow(_curSlot) == true)
+            {
+                ChangeSlot(ConstNums.subWeaponIndex);
+                _info.ClearCurWeaponThrowIndex();
+            }
+            else
+            {
+                SwapOtherThrowWeapon();
+            }
         }
         else
         {
-            _info.HUD.RefreshSlotThrowWeapon(_info._slotWeapon[_curSlot].GetWeapon());
+            _info.HUD.RefreshSlotWeaponThrow(_info.GetWeaponInSlot(_curSlot).GetComponent<WeaponThrow>());
         }
-
-        StartCoroutine($"AttackLatency_{ConstNums.throwWeaponIndex}");
+        
+        StartCoroutine($"AttackLatency_{ConstNums.weaponThrowIndex}");
     }
 
-    private void TrySwapOtherThrowWeapon()
+    private void SwapOtherThrowWeapon()
     {
         _curSlot = _info.ChangeThrowIndex(_curSlot);
-        //_info.HUD.RefreshSlotThrowWeapon(_info._slotWeapon[_curSlot].GetWeapon());
-
-        if (_info.IsNullWeaponSlot(_curSlot) == true)
-        {
-            ChangeSlot(ConstNums.subWeaponIndex);
-        }
-        else
-        {
-            _info.HUD.ChangeCurSlot(ConstNums.throwWeaponIndex);
-        }
+        _info.HUD.ChangeCurSlot(ConstNums.weaponThrowIndex);
+        _info.HUD.RefreshSlotWeaponThrow(_info.GetWeaponInSlot(_curSlot).GetComponent<WeaponThrow>());
     }
 
     private void ThrowWeaponCooltime()
@@ -225,7 +239,8 @@ public partial class Player
     private IEnumerator AttackLatency_0()
     {
         _state = State.ATTACKLATENCY;
-        yield return new WaitForSeconds(_info.GetWeaponInSlot(_curSlot).attackLatency);
+        _info.HUD.PlayWeaponCooltimeView(_curSlot, _info.GetWeaponInSlot(_curSlot).weaponData.atkLatency);
+        yield return new WaitForSeconds(_info.GetWeaponInSlot(_curSlot).weaponData.atkLatency);
         _canFire[ConstNums.primaryWeapon1Index] = true;
         _state = State.LIVE;
     }
@@ -233,42 +248,45 @@ public partial class Player
     private IEnumerator AttackLatency_1()
     {
         _state = State.ATTACKLATENCY;
-        yield return new WaitForSeconds(_info.GetWeaponInSlot(_curSlot).attackLatency);
+        _info.HUD.PlayWeaponCooltimeView(_curSlot, _info.GetWeaponInSlot(_curSlot).weaponData.atkLatency);
+        yield return new WaitForSeconds(_info.GetWeaponInSlot(_curSlot).weaponData.atkLatency);
         _state = State.LIVE;
         _canFire[ConstNums.primaryWeapon2Index] = true;
     }
 
     private IEnumerator AttackLatency_2()
     {
-        yield return new WaitForSeconds(_info.GetWeaponInSlot(_curSlot).attackLatency);
+        yield return new WaitForSeconds(_info.GetWeaponInSlot(_curSlot).weaponData.atkLatency);
         _canFire[ConstNums.subWeaponIndex] = true;
     }
 
     private IEnumerator AttackLatency_3()
     {
         _state = State.ATTACKLATENCY;
-
         yield return new WaitForSeconds(throwWeaponL);
-        Debug.LogWarning("ThrowWeapon : AttackLatency_3"); ;
-        _canFire[ConstNums.throwWeaponIndex] = true;
+        _canFire[ConstNums.weaponThrowIndex] = true;
         _state = State.LIVE;
     }
 
 
     public Vector3 CalcAttackDir()
     {
-        Vector3 dir = _input.mouseVec - transform.position;
+        Vector2 dir = _input.mouseVec - transform.position;
         dir.Normalize();
-        return dir;
+        return (Vector3)dir;
     }
 
     public void TakeDamage(object[] ownerInfo, float damageToPlayer, float damageToObject, Vector2 startVector, bool isAttacker)
     {
-        if(_info._currentHP > 0)
+        if(IsCurrentHPOverZero() == true)
         {
             if ((bool)ownerInfo[(int)InfoIdx.ISMAGNET] == false) // 자기장이 아니면
             {
                 ObjectPoolManager.AllocObject("Hit", transform.position + new Vector3((-1 * startVector).x, (-1 * startVector).y, 7));
+                if (_audioSrcHit != null)
+                {
+                    _audioSource.PlayOneShot(_audioSrcHit);
+                }
             }
         }
 
@@ -277,31 +295,45 @@ public partial class Player
             return;
         }
 
-        if (_info._currentHP > 0)
+        if (IsCurrentHPOverZero() == true)
         {
             //임시구현. Vector2 startVector와 transform.Translate 값을 이용하여 d값을 구하고 그 값에 따라 다른 데미지 부여 필요
-            float calcDamage = damageToPlayer * (1 - (_info._defensive / (defenseConstant + _info._defensive)));
-            _info.AddValueForHP(-calcDamage);
+            float calcDamage = damageToPlayer * (1 - (_info.GetDefensive() / (defenseConstant + _info.GetDefensive())));
+            _info.AddCurrentHPValue(-calcDamage);
 
-            
-            _rbody.velocity = Vector2.zero;
-            StartCoroutine(Knockback(startVector, transform.position));
+            if ((bool)ownerInfo[(int)InfoIdx.ISMAGNET] == false)
+            {
+                _rbody.velocity = Vector2.zero;
+                StartCoroutine(Knockback(startVector, transform.position));
+            }
         }
 
-        if ((_info._currentHP <= 0) && (PlayerManager.IsDead() == false))
+        if ((IsCurrentHPOverZero() == false) && (PlayerManager.Instance.IsDead() == false))
         {
-            PlayerManager.NotifyDeath(ownerInfo);
-            PlayerManager._isMyPlayerDead = true;
-            Cursor.visible = true;
+            DropItemManager.DropItemsOfDeadPlayer(_info);
+
+            PlayerManager.Instance.NotifyDeath(ownerInfo);
+            PlayerManager.Instance.SetDead(true);
+            
             _info.HUD.ChangeActiveCursor(false);
 
             _photonView.RPC("RPC_Dead", RpcTarget.AllBuffered);
         }
     }
 
+    public bool IsCurrentHPOverZero()
+    {
+        if(_info.GetCurrentHP() > 0)
+        {
+            return true;
+        }
+        return false;
+    }
+
     [PunRPC]
     public void FlameShot(object[] ownerInfo, Vector3 direction, Vector3 position, Quaternion angle)
     {
+        _particleSystem.Play();
         _anim.SetTrigger("shoot");
         Vector3 pos = new Vector3(position.x, position.y, 0f);
 
@@ -314,6 +346,7 @@ public partial class Player
     [PunRPC]
     public void Shot(object[] ownerInfo, Vector3 direction, Vector3 position, float damageToPlayer, float damageToObject, float attackRange, float fallOff, bool isBomb)
     {
+        _particleSystem.Play();
         _anim.SetTrigger("shoot");
         Vector3 pos = new Vector3(position.x, position.y, 0f);
         if (!isBomb)
@@ -363,9 +396,31 @@ public partial class Player
             }
             else
             {
-                Debug.Log("Not Player or Dummy");
+                //Debug.Log("Not Player or Dummy");
             }
         }
+    }
+
+    [PunRPC]
+    public void GreThrow(object[] ownerInfo, Vector3 direction, Vector3 position, float damageToPlayer, float damageToObject, float lotation)
+    {
+        _anim.SetTrigger("shoot");
+        Vector3 pos = new Vector3(position.x, position.y, 0f);
+        var gre = ObjectPoolManager.AllocObject<Grenade>("Grenade", transform.position + CalcAttackDir());
+        gre.transform.position = position + direction;
+        gre.SetData(ownerInfo, direction, position, damageToPlayer, damageToObject,
+               lotation);
+    }
+
+    [PunRPC]
+    public void FogThrow(object[] ownerInfo, Vector3 direction, Vector3 position, float damageToPlayer, float damageToObject, float lotation)
+    {
+        _anim.SetTrigger("shoot");
+        Vector3 pos = new Vector3(position.x, position.y, 0f);
+        var fog = ObjectPoolManager.AllocObject<BombFog>("Bombfog", transform.position + CalcAttackDir());
+        fog.transform.position = position + direction;
+        fog.SetData(ownerInfo, direction, position, damageToPlayer, damageToObject,
+                       lotation);
     }
     // ~ Attack()
 }

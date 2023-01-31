@@ -80,7 +80,7 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 1187805785
-  m_SortingLayer: 5
+  m_SortingLayer: 4
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 67c29887f2671d04fb1f12f81ecec192, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -111,6 +111,7 @@ MonoBehaviour:
   MaxStep: 0
   _audioFootStep: {fileID: 8300000, guid: d3dec42802d880a48a41b0b0a92171bd, type: 3}
   _audioFootStepInWater: {fileID: 8300000, guid: c204d8040fdc35843a0ac6eaba00ef88, type: 3}
+  _audioSrcHit: {fileID: 8300000, guid: a0eb1885b55a5b04b81a18eef438aede, type: 3}
   _AIname: 
   _currentHP: 1000
   _basicSpeed: 5

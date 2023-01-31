@@ -6,12 +6,12 @@ using Photon.Pun;
 public class BombBullet : MonoBehaviour
 {
     private const float basicSizeBullet = 0.2f;
-    private const float sizeMaxBullet = 1.3f;
-    private const float sizeUpTickSpeed = 0.4f;
-    private const float basicColliRadiusBullet = 0.5f;
+    private const float sizeMaxBullet = 5.4f;
+    private const float sizeUpTickSpeed = 1.2f;
+    private const float basicColliRadiusBullet = 1.0f;
     private const float sizeUpColliRadiusBullet = 15.0f;
     private const float colliderActRange = 0.75f;
-    private const float colliderDisactRange = 0.75f;
+    private const float colliderDisactRange = 0.6f;
 
     public float _bulletSpeed;
 
@@ -50,7 +50,7 @@ public class BombBullet : MonoBehaviour
             Debug.Log("Bomb bullet is not isBomb");
         }
 
-        if (Vector2.Distance(_dir + _pos, transform.position) > _attackRange * 0.9f)
+        if (Vector2.Distance(_dir + _pos, transform.position) > _attackRange)
         {
             if (_isBomb)
             {

@@ -15,7 +15,12 @@ public partial class Player
         }
 
         bool isNotZeroBullet = (_info.GetHavingBullet(_info.CastIntBulletType(_curSlot)) > 0);
-        bool isNotMaxBullet = (_info._loadedBullet[_curSlot] < _info.GetWeaponInSlot(_curSlot).GetComponent<WeaponGun>().maxBullet);
+        bool isNotMaxBullet = (_info.GetLoadedBullet(_curSlot) < _info.GetWeaponInSlot(_curSlot).GetComponent<WeaponGun>().weaponData.maxBullet);
+
+        if (isNotMaxBullet == false)
+        {
+            _info.HUD.CreateInformText(_info.GetCantReloadingMessage());
+        }
 
         return (isNotZeroBullet && isNotMaxBullet);
     }
@@ -28,18 +33,18 @@ public partial class Player
 
         if(havingBullet > 0)
         {
-            int reloadBulletCount = gun.maxBullet - _info._loadedBullet[_curSlot];
+            int reloadBulletCount = gun.weaponData.maxBullet - _info.GetLoadedBullet(_curSlot);
             if(havingBullet >= reloadBulletCount)
             {
-                _info._loadedBullet[_curSlot] = gun.maxBullet;
+                _info.SetLoadedBullet(_curSlot, gun.weaponData.maxBullet);
             }
             else
             {
                 reloadBulletCount = havingBullet;
-                _info._loadedBullet[_curSlot] += havingBullet;
+                _info.AddLoadedBulletValue(_curSlot, reloadBulletCount);
             }
-            _info.BulletSlotAddValue(_info.CastIntBulletType(_curSlot), -reloadBulletCount);
-            HUDUpdate_slotBullet();
+            _info.AddBulletSlotValue(_info.CastIntBulletType(_curSlot), -reloadBulletCount);
+            HUDRefreshSlotBullet();
             _state = State.LIVE;
         }
         else
@@ -51,7 +56,7 @@ public partial class Player
     //현재 장전된 총알이 없고, 해당 총알을 가지고 있다면 자동으로 장전
     private void AutoReloading()
     {
-        bool isZeroLoadedBullet = (_info._loadedBullet[_curSlot] == 0);
+        bool isZeroLoadedBullet = (_info.GetLoadedBullet(_curSlot) == 0);
         bool isNotZeroBullet = (_info.GetHavingBullet(_info.CastIntBulletType(_curSlot)) > 0);
 
         if (isZeroLoadedBullet && isNotZeroBullet)
@@ -63,11 +68,11 @@ public partial class Player
     //장전 쿨타임 적용
     private IEnumerator ReloadingGun()
     {
-        _info.HUD.SetActiveReloadingView(true);
+        _info.HUD.PlayActionViewOn("장전 중...", _info.GetWeaponGunInSlot(_curSlot).weaponData.loadedTime);
         _state = State.RELOADING;
-        yield return new WaitForSeconds(_info.GetWeaponGunInSlot(_curSlot).loadedTime);
+        yield return new WaitForSeconds(_info.GetWeaponGunInSlot(_curSlot).weaponData.loadedTime);
         ReloadGun();
-        _info.HUD.SetActiveReloadingView(false);
+        _info.HUD.PlayActionViewOff();
     }
     // ~ Reloading()
 }

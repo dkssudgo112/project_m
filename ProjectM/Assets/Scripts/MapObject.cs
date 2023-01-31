@@ -1,12 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 
 
-public class MapObject : MonoBehaviourPunCallbacks, IDamageable
+public class MapObject : MonoBehaviourPun, IDamageable
 {
-
     private const float destoryTime = 1.0f;
     private const float TickDescreseColer = 0.03f;
 
@@ -22,7 +19,11 @@ public class MapObject : MonoBehaviourPunCallbacks, IDamageable
     private Vector3 _basicScale = new Vector3();
     private Vector3 _minScale = new Vector3();
     private SpriteRenderer _spriteRenderer = null;
-    
+    private Collider2D _collider;
+
+    [SerializeField]
+    private AudioClip _audioSrcHit = null;
+    private AudioSource _audioSource = null;
 
     void Awake()
     {
@@ -34,6 +35,8 @@ public class MapObject : MonoBehaviourPunCallbacks, IDamageable
         _basicScale = transform.localScale;
         _minScale = _basicScale / 2;
         _spriteRenderer = GetComponent<SpriteRenderer>();
+        _audioSource = GetComponent<AudioSource>();
+        _collider = GetComponent<Collider2D>();
     }
 
     void SetState()
@@ -56,8 +59,17 @@ public class MapObject : MonoBehaviourPunCallbacks, IDamageable
             
             //크기 계산식. 후에 바꿔도 되는 부분
             transform.localScale = _minScale + _minScale * _currentDurability / _maxDurability;
+            if(transform.localScale.x < 0)
+            {
+                transform.localScale = new Vector3(0,0,0);
+            }
 
             ObjectPoolManager.AllocObject("Hit", transform.position + new Vector3((-1 * startVector).x, (-1 * startVector).y, 7));
+            if (_audioSrcHit != null)
+            {
+                _audioSource.PlayOneShot(_audioSrcHit);
+
+            }
         }
 
         if (_currentDurability <= 0)
@@ -65,11 +77,17 @@ public class MapObject : MonoBehaviourPunCallbacks, IDamageable
             if(isAttacker == true)
             {
                 _isBreaked = true;
+                if (_audioSource != null)
+                {
+                    _audioSource.Stop();
+                    _audioSource.Play();
+                }
                 gameObject.GetComponent<PhotonView>().RPC("BreakThisObj", RpcTarget.OthersBuffered);
                 _isAttacker = true;
                 _startVector = startVector;
                 
                 GetComponent<UnityEngine.Rendering.Universal.ShadowCaster2D>().enabled = false;
+                _collider.enabled = false;
             }
         }
     }
@@ -89,7 +107,7 @@ public class MapObject : MonoBehaviourPunCallbacks, IDamageable
                 {
                     if (_isDropItem == true)
                     {
-                        ItemManager.DropRandomItem(transform.position, _startVector);
+                        DropItemManager.DropRandomItem(transform.position, _startVector);
 
                         gameObject.SetActive(false);
                         gameObject.GetComponent<PhotonView>().RPC("DeleteObject", RpcTarget.OthersBuffered);
@@ -110,6 +128,10 @@ public class MapObject : MonoBehaviourPunCallbacks, IDamageable
     public void BreakThisObj()
     {
         _isBreaked = true;
+        if (_audioSource != null)
+        {
+            _audioSource.Play();
+        }
         GetComponent<UnityEngine.Rendering.Universal.ShadowCaster2D>().enabled = false;
     }
 

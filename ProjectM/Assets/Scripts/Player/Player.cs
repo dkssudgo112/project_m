@@ -15,21 +15,31 @@ public enum State
 
 public partial class Player : MonoBehaviourPunCallbacks, IDamageable
 {
-    public static PlayerInfo _info = null;
-    public PhotonView _photonView = null;
-    public int _curSlot = ConstNums.subWeaponIndex;
-    public Transform _basicAtkBox = null;
-    public Vector2 _basicAtkSize = new Vector2(0, 0);
-    public AudioClip _audioGun = null;
-    public AudioClip _audioFootStep = null;
-    public AudioClip _audioFootStepInWater = null;
-    public Texture2D cursorImg = null;
-    
+    private static PlayerInfo _info = null;
+
+    [SerializeField]
+    private PhotonView _photonView = null;
+
+    [SerializeField]
+    private Transform _basicAtkBox = null;
+
+    [SerializeField]
+    private Vector2 _basicAtkSize = new Vector2(0, 0);
+
+    private int _curSlot = ConstNums.subWeaponIndex;
+
+    [SerializeField] private AudioClip _audioGun = null;
+    [SerializeField] private AudioClip _audioGunAK = null;
+    [SerializeField] private AudioClip _audioGunBomb = null;
+    [SerializeField] private AudioClip _audioFootStep = null;
+    [SerializeField] private AudioClip _audioFootStepInWater = null;
+    [SerializeField] private AudioClip _audioSrcHit = null;
+
 
     private const int defenseConstant = 100;
     private const float throwWeaponL = 1.0f;
     private const float ninetyNinePer = 0.99f;
-    private const float KnockBackPower = 0.3f;
+    private const float KnockBackPower = 0.2f;
     private const float tenPer = 0.1f;
     private const float timerWaterEffect = 0.3f;
 
@@ -39,8 +49,9 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
     private Animator _anim = null;
     private State _state = State.LIVE;
     private AudioSource _audioSource = null;
-    private bool isOnRiver = false;
+    private bool _isOnRiver = false;
     private float _tickTimerWaterEffect = 0.0f;
+    private ParticleSystem _particleSystem = null;
 
     // 무기 슬롯마다 다른 Latency적용을 위해 필요함
     private bool[] _canFire = new bool[ConstNums.numberOfWeapon] { true, true, true, true, true };
@@ -77,6 +88,7 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
         _rbody = GetComponent<Rigidbody2D>();
         _anim = GetComponent<Animator>();
         _audioSource = GetComponent<AudioSource>();
+        _particleSystem = GetComponent<ParticleSystem>();
 
         _rbody.isKinematic = false;
         _rbody.gravityScale = 0.0f;
@@ -85,9 +97,9 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
 
     void Start()
     {
-        if (UIManager._Instance != null)
+        if (UIManager.Instance != null)
         {
-            _info.HUD = UIManager._Instance;
+            _info.HUD = UIManager.Instance;
             _info.HUD.SendPlayerData(Instance, _info);
         }
         else
@@ -95,7 +107,7 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
             Debug.Log("UIManager._Instance is NULL");
         }
 
-        if(_photonView.IsMine == false)
+        if (_photonView.IsMine == false)
         {
             _audioSource.clip = _audioFootStep;
             _audioSource.loop = true;
@@ -104,9 +116,19 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
 
     }
 
+    private void FixedUpdate()
+    {
+        // Part : Body moving
+        _rbody.velocity = _input.move * _info.GetPlayerSpeed() * Time.fixedDeltaTime;
+        _rbody.angularVelocity = 0f;
+    }
+
     private void Update()
     {
-        
+        if (NetworkManager.Instance.IsEnd() && _photonView.IsMine == false)
+        {
+            _audioSource.Stop();
+        }
 
         if (_photonView.IsMine == false)
         {
@@ -116,13 +138,6 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
         UpdateSound();
         // Part : Body rotaion - World좌표
         PlayerRotationByMouse();
-
-        // Part : Body moving
-        _rbody.velocity = (_input.move * (_info._basicSpeed + _info._eventSpeed)) * Time.deltaTime;
-        _rbody.angularVelocity = 0f;
-
-        //update sound
-        
 
         // Reloading() ~
         if (_input.reload == true)
@@ -149,7 +164,7 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
         }
         if (_input.slots[3] == true)
         {
-            TryChangeSlot(ConstNums.throwWeaponIndex);
+            TryChangeSlot(ConstNums.weaponThrowIndex);
         }
 
         if (_input.slots[6] == true)
@@ -177,8 +192,6 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
             Attack();
         }
         // ~ Attack()
-
-        
     }
 
     private void PlayerRotationByMouse()
@@ -201,9 +214,9 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
             return;
         }
 
-        if(slotIndex == ConstNums.throwWeaponIndex)
+        if (slotIndex >= ConstNums.weaponThrowIndex)
         {
-            if(_info.IsNullThrowWeaponSlot() == true)
+            if (_info.IsNullWeaponThrowSlot() == true)
             {
                 Debug.Log("IsNullThrowWeaponSlot()");
                 return;
@@ -236,14 +249,12 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
         {
 
             photonView.RPC("RPC_ChangeAnim", RpcTarget.AllBuffered, "Gun");
-            if (_info.GetWeaponInSlot(_curSlot).itemName == "rocketlauncher")
+            if (_info.GetWeaponInSlot(_curSlot).itemData.itemName == "rocketlauncher")
             {
-                Cursor.visible = false;
                 _info.HUD.ChangeActiveCursor(true);
             }
             else
             {
-                Cursor.visible = true;
                 _info.HUD.ChangeActiveCursor(false);
             }
 
@@ -252,59 +263,63 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
         }
         else if (_info.IsSubSlot(_curSlot) == true)
         {
-            Cursor.visible = true;
             _info.HUD.ChangeActiveCursor(false);
 
-            if (_info.GetWeaponInSlot(_curSlot).itemName == "Fist")
+            if (_info.GetWeaponInSlot(_curSlot).itemData.itemName == "Fist")
             {
-                photonView.RPC("RPC_ChangeAnim", RpcTarget.AllBuffered, _info.GetWeaponInSlot(_curSlot).itemName);
+                photonView.RPC("RPC_ChangeAnim", RpcTarget.AllBuffered, _info.GetWeaponInSlot(_curSlot).itemData.itemName);
             }
-            else if (_info.GetWeaponInSlot(_curSlot).itemName == "hammer")
+            else if (_info.GetWeaponInSlot(_curSlot).itemData.itemName == "hammer")
             {
-                photonView.RPC("RPC_ChangeAnim", RpcTarget.AllBuffered, _info.GetWeaponInSlot(_curSlot).itemName);
+                photonView.RPC("RPC_ChangeAnim", RpcTarget.AllBuffered, _info.GetWeaponInSlot(_curSlot).itemData.itemName);
             }
         }
     }
 
     public void ChangeThrowWeaponSlot()
     {
+        StopAction();
+
+        _info.HUD.ChangeActiveCursor(false);
+
         //이미 수류탄 슬롯이었다면, 수류탄을 스왑해줘야한다.
-        if (_curSlot >= ConstNums.throwWeaponIndex)
+        if (_curSlot >= ConstNums.weaponThrowIndex)
         {
             //다른 수류탄 종류가 있는지 확인하고 스왑해줘야함 
-            if (_info.IsNullOtherThrowWeapon(_curSlot) == false)
-            { 
+            if (_info.IsNullOtherWeaponThrow(_curSlot) == false)
+            {
                 _curSlot = _info.ChangeThrowIndex(_curSlot);
-                //_info.HUD.RefreshSlotThrowWeapon(_info._slotWeapon[_curSlot].GetWeapon());
+                _info.HUD.RefreshSlotWeaponThrow(_info.GetWeaponInSlot(_curSlot).GetComponent<WeaponThrow>());
             }
             return;
         }
-        _curSlot = ConstNums.throwWeaponIndex + _info._curThrowWeapon;
-        _info.HUD.ChangeCurSlot(ConstNums.throwWeaponIndex);
+        _curSlot = ConstNums.weaponThrowIndex + _info.GetCurWeaponThrowIndex();
+        _info.HUD.ChangeCurSlot(ConstNums.weaponThrowIndex);
         return;
     }
     #endregion
 
     private void StopAction()
     {
+        _info.HUD.PlayActionViewOff();
+
         if (_state == State.RELOADING)
         {
-            _info.HUD.SetActiveReloadingView(false);
             StopCoroutine("ReloadingGun");
             _state = State.LIVE;
         }
-        if(_state == State.RECOVERYING)
+        if (_state == State.RECOVERYING)
         {
-            _info.HUD.SetActiveRecoveringView(false);
             StopCoroutine("RecoverCooltime");
             _state = State.LIVE;
         }
     }
-    
-    //HUD Update 함수 모음
-    private void HUDUpdate_slotBullet()
+
+    private void HUDRefreshSlotBullet()
     {
-        _info.HUD.RefreshSlotBullet(_info._loadedBullet[_curSlot], _info._bulletSlot[_info.CastIntBulletType(_curSlot)].itemCount);
+        int loadedBullet = _info.GetLoadedBullet(_curSlot);
+        int havingBullet = _info.GetHavingBullet(_info.CastIntBulletType(_curSlot));
+        _info.HUD.RefreshSlotBullet(loadedBullet, havingBullet);
     }
 
     private void OnTriggerExit2D(Collider2D collision)
@@ -313,31 +328,16 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
 
         if (collision.tag == "River")
         {
-            isOnRiver = false;
+            _isOnRiver = false;
         }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-      //if (collision.tag == "Bullet")
-      //{
-      //    Transform colTr = collision.GetComponent<Transform>();
-      //    _rbody.velocity = Vector2.zero;
-      //    StartCoroutine(Knockback(colTr.position, transform.position));
-      //    
-      //}
-      //else
-      //{
-      //    Debug.Log("This is collision.tag != bullet");
-      //}
-
         if (collision.tag == "River")
         {
-            
-            isOnRiver = true;
-
+            _isOnRiver = true;
         }
-        
     }
 
     private void OnDrawGizmos()
@@ -361,13 +361,14 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
     [PunRPC]
     public void RPC_ChangeAnim(string itemname)
     {
-        if(itemname == "Gun")
+        if (itemname == "Gun")
         {
             _anim.SetBool("isGun", true);
             _anim.SetBool("isFist", false);
             _anim.SetBool("isHammer", false);
+
         }
-        else if(itemname == "hammer")
+        else if (itemname == "hammer")
         {
             _anim.SetBool("isGun", false);
             _anim.SetBool("isFist", false);
@@ -381,17 +382,6 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
         }
     }
 
-    public void DisableItemByViewID(int viewID)
-    {
-        Instance._photonView.RPC("RPC_DisableItemByViewID", RpcTarget.AllBuffered, viewID);
-    }
-
-    [PunRPC]
-    public void RPC_DisableItemByViewID(int viewID)
-    {
-        ObjectPoolManager.GetItemByViewID(viewID).SetActive(false);
-    }
-
     [PunRPC]
     public void RPC_Dead()
     {
@@ -401,7 +391,10 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
 
     public void ChangeAnimFist()
     {
-        photonView.RPC("RPC_ChangeAnim", RpcTarget.AllBuffered, _info._fist.itemName);
+        if (_anim.GetBool("isHammer") == true)
+        {
+            photonView.RPC("RPC_ChangeAnim", RpcTarget.AllBuffered, _info.GetFist().itemData.itemName);
+        }
     }
 
     private bool IsMoving()
@@ -411,26 +404,28 @@ public partial class Player : MonoBehaviourPunCallbacks, IDamageable
 
     private void UpdateSound()
     {
-        if (IsMoving() == true && isOnRiver == false)
+        if (IsMoving() == true)
         {
-            _audioSource.clip = _audioFootStep;
             if (_audioSource.isPlaying == false)
             {
-                _audioSource.Play();
-            }
+                if (_isOnRiver == true)
+                {
+                    _audioSource.clip = _audioFootStepInWater;
+                }
+                else
+                {
+                    _audioSource.clip = _audioFootStep;
+                }
 
-        }
-        else if (IsMoving() == true && isOnRiver == true)
-        {
-            _audioSource.clip = _audioFootStepInWater;
-            if (_audioSource.isPlaying == false)
-            {
                 _audioSource.Play();
             }
         }
-        else if (IsMoving() == false && _audioSource.clip != _audioGun)
+        else
         {
-            _audioSource.Stop();
+            if(_audioSource.clip == _audioFootStepInWater || _audioSource.clip == _audioFootStep)
+            {
+                _audioSource.Stop();
+            }
         }
     }
 }

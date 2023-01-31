@@ -8,13 +8,12 @@ public class WeaponSlot
 
     public void SetWeapon(Weapon weapon)
     {
-        Debug.LogWarning($"ThrowWeapon : {weapon}");
         _weapon = weapon;
     }
 
     public void SetItemCount(int itemCount)
     {
-        _weapon.itemCount = itemCount;
+        _weapon.itemData.itemCount = itemCount;
     }
     
     public Weapon GetWeapon()
@@ -38,7 +37,7 @@ public class WeaponSlot
 
     public int GetItemCount()
     {
-        return _weapon.itemCount;
+        return _weapon.itemData.itemCount;
     }
 
     public void ClearWeapon()
@@ -48,11 +47,11 @@ public class WeaponSlot
 
     public void AddItemCount(int itemCount)
     {
-        _weapon.itemCount += itemCount;
+        _weapon.itemData.itemCount += itemCount;
     }
 
     public void UseItemCount()
     {
-        _weapon.itemCount--;
+        _weapon.itemData.itemCount--;
     }
 }

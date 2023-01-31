@@ -5,22 +5,7 @@ using Photon.Pun;
 
 public class Item : MonoBehaviourPunCallbacks
 {
-    [Header("Item 공통 정보")]
-    public int id = 0;
-    public int viewID = 0;
-    public string itemName = "";
-    public ItemType type = ItemType.NULL;
-    public string spritePath = "";
-    public string toolTip = "";
-    public int stackSize = 0;
-    public int itemCount = 0;
-
     public ItemData itemData;
-
-    public virtual void ParseData()
-    {
-
-    }
 
     public override void OnDisable()
     {
@@ -32,12 +17,11 @@ public class Item : MonoBehaviourPunCallbacks
 
     public virtual void DeepCopy(Item item)
     {
-        id = item.id;
-        itemName = item.itemName;
-        type = item.type;
-        spritePath = item.spritePath;
-        toolTip = item.toolTip;
-        stackSize = item.stackSize;
-        itemCount = item.itemCount;
+        ItemData itemData = new ItemData();
+        itemData.DeepCopy(item.itemData);
+        this.itemData = itemData;
+
+        this.gameObject.name = item.itemData.itemName;
+        this.GetComponent<SpriteRenderer>().sprite = item.GetComponent<SpriteRenderer>().sprite;
     }
 }

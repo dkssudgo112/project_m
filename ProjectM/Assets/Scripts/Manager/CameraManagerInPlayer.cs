@@ -1,13 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 
-public class CameraManagerInPlayer : MonoBehaviourPunCallbacks
+public class CameraManagerInPlayer : MonoBehaviourPun
 {
     GameObject _mainCamera = null;
-
-    
 
     void Start()
     {
@@ -20,7 +16,7 @@ public class CameraManagerInPlayer : MonoBehaviourPunCallbacks
 
     void Update()
     {
-        if (photonView.IsMine == true &&  PlayerManager._isMyPlayerDead == false)
+        if (photonView.IsMine == true &&  PlayerManager.Instance.IsDead() == false)
         {
             _mainCamera.transform.position = new Vector3(transform.position.x, transform.position.y, -10);
         }

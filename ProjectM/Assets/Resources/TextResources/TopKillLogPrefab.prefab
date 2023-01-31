@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2833457209469124948}
   - component: {fileID: 2748096461768080442}
   - component: {fileID: 2748096461768080443}
+  - component: {fileID: 4927028474347164517}
   m_Layer: 5
   m_Name: TopKillLogPrefab
   m_TagString: Untagged
@@ -64,7 +65,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0, g: 0, b: 0, a: 0.50980395}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -92,7 +93,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe083442f0842cf4ca7940a03fefc2de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _fadeTime: 4
+  _fadeIn: 1
+  _fadeOut: 1
+  _fadeTime: 2
+  _delayTime: 4
+  _maxAlpha: 1
+  _minAlpha: 0
 --- !u!114 &2748096461768080442
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -133,6 +139,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HorizontalFit: 2
   m_VerticalFit: 2
+--- !u!225 &4927028474347164517
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2748096461768080439}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &2748096463690703661
 GameObject:
   m_ObjectHideFlags: 0

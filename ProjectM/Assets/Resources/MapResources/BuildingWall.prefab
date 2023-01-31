@@ -77,16 +77,16 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 1969102745
-  m_SortingLayer: 3
+  m_SortingLayer: 6
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: abb4ae2875d0dec40aea5e919802a8bd, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
-  m_DrawMode: 0
-  m_Size: {x: 6.82, y: 6.82}
-  m_AdaptiveModeThreshold: 0.5
-  m_SpriteTileMode: 0
+  m_DrawMode: 2
+  m_Size: {x: 2, y: 2}
+  m_AdaptiveModeThreshold: 1
+  m_SpriteTileMode: 1
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
@@ -106,6 +106,7 @@ MonoBehaviour:
   _currentDurability: 1000
   _isBreakable: 0
   _isDropItem: 0
+  _audioSrcHit: {fileID: 0}
 --- !u!61 &4273117234767578596
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -143,13 +144,13 @@ BoxCollider2D:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
     oldSize: {x: 1.71, y: 1.71}
-    newSize: {x: 6.82, y: 6.82}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
+    newSize: {x: 2, y: 2}
+    adaptiveTilingThreshold: 1
+    drawMode: 2
+    adaptiveTiling: 1
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1.7, y: 1.7}
+  m_Size: {x: 2, y: 2}
   m_EdgeRadius: 0
 --- !u!50 &4273117234767578594
 Rigidbody2D:
@@ -237,10 +238,10 @@ MonoBehaviour:
   m_SelfShadows: 0
   m_ApplyToSortingLayers: 00000000934a3a62597acc467d4e1af2a11d92ead967e45d
   m_ShapePath:
-  - {x: -0.85, y: -0.85, z: 0}
-  - {x: -0.85, y: 0.85, z: 0}
-  - {x: 0.85, y: 0.85, z: 0}
-  - {x: 0.85, y: -0.85, z: 0}
-  m_ShapePathHash: -281308923
+  - {x: -1, y: -1, z: 0}
+  - {x: -1, y: 1, z: 0}
+  - {x: 1, y: 1, z: 0}
+  - {x: 1, y: -1, z: 0}
+  m_ShapePathHash: 764802325
   m_Mesh: {fileID: 0}
-  m_InstanceId: 149028
+  m_InstanceId: 293122

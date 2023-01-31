@@ -1,12 +1,9 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using Photon.Pun;
-using Photon.Realtime;
 
-public class MagnetTimer : MonoBehaviourPun
+public class MagnetTimer : MonoBehaviour
 {
-    private static MagnetTimer Instance;
+    public static MagnetTimer Instance;
 
     private int _phaseTime = 0;
     private int _outputTime = 0;
@@ -15,7 +12,7 @@ public class MagnetTimer : MonoBehaviourPun
     private int _prevTime = 0;
     private int _timeDiff = 0;
 
-    private bool isRun = false;
+    private bool _isRun = false;
 
     private void Awake()
     {
@@ -25,36 +22,36 @@ public class MagnetTimer : MonoBehaviourPun
         }
     }
 
-    public static void Run(int phase)
+    public void Run(int phase)
     {
         int time = (int)ConstNums.PhaseTime[phase];
-        Instance._phaseTime = time * 1000;
-        Instance._prevTime = 0;
-        Instance._timeDiff = 0;
+        _phaseTime = time * 1000;
+        _prevTime = 0;
+        _timeDiff = 0;
 
-        Instance.isRun = true;
-        Instance.StartCoroutine("CoTimeFlow");
+        _isRun = true;
+        StartCoroutine("CoTimeFlow");
+    }
+
+    public void Stop()
+    {
+        UpdateHUDTime(0);
     }
 
     private void OnFinish()
     {
-        NetworkManager.NextPhase();
-    }
-
-    public static void Stop()
-    {
-        UIManager._Instance.RefreshTime($"00 : 00");
+        NetworkManager.Instance.NextPhase();
     }
 
     private IEnumerator CoTimeFlow()
     {
-        while (isRun == true)
+        while (_isRun == true)
         {
             yield return null;
 
             UpdateHUDTime(_outputTime);
 
-            _currTime = NetworkManager.GetTime();
+            _currTime = NetworkManager.Instance.GetTime();
 
             if (_prevTime == 0)
             {
@@ -71,29 +68,18 @@ public class MagnetTimer : MonoBehaviourPun
                 _phaseTime = 0;
                 _outputTime = 0;
 
-                isRun = false;
+                _isRun = false;
             }
 
             _prevTime = _currTime;
         }
 
-        UIManager._Instance.RefreshTime($"00 : 00");
+        Stop();
         OnFinish();
     }
 
     private void UpdateHUDTime(int outputTime)
     {
-        if (_outputTime >= 10)
-        {
-            UIManager._Instance.RefreshTime($"00 : {_outputTime}");
-        }
-        else if (_outputTime > 0)
-        {
-            UIManager._Instance.RefreshTime($"00 : 0{_outputTime}");
-        }
-        else
-        {
-            UIManager._Instance.RefreshTime($"00 : 00");
-        }
+        UIManager.Instance.RefreshTime(string.Format("{0:00 : ##}", _outputTime));
     }
 }

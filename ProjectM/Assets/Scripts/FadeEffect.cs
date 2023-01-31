@@ -1,48 +1,40 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 
 public class FadeEffect : MonoBehaviour
 {
     [Header("Fade On")]
-    public bool _fadeIn = true;
-    public bool _fadeOut = true;
+    [SerializeField]
+    private bool _fadeIn = true;
+    [SerializeField]
+    private bool _fadeOut = true;
 
     [Header("Fade Time")]
-    public float _fadeTime = 4f;
-    public float _delayTime = 4f;
+    [SerializeField]
+    private float _fadeTime = 4f;
+    [SerializeField]
+    private float _delayTime = 4f;
 
     [Header("Alpha Value")]
-    public float _imageMaxAlpha = 0.5f;
-    public float _textMaxAlpha = 1f;
-    public float _imageMinAlpha = 0f;
-    public float _textMinAlpha = 0f;
+    [SerializeField]
+    private float _maxAlpha = 1f;
+    [SerializeField]
+    private float _minAlpha = 0f;
 
-    private TMP_Text text = null;
-    private Image image = null;
+    private CanvasGroup target = null;
 
     void Awake()
     {
-        GameObject obj = this.gameObject;
+        target = GetComponent<CanvasGroup>();
 
-        image = obj.GetComponent<Image>();
-        if (image == null)
+        if (_fadeIn == true)
         {
-            text = obj.GetComponent<TMP_Text>();
-            text.color -= new Color(0, 0, 0, text.color.a);
-}
-        else if (obj.transform.childCount > 0)
-        {
-            image.color -= new Color(0, 0, 0, image.color.a);
-            text = obj.transform.GetChild(0).GetComponent<TMP_Text>();
+            target.alpha = 0;
         }
         else
         {
-            image.color -= new Color(0, 0, 0, image.color.a);
+            target.alpha = 1;
         }
-
     }
 
     void Start()
@@ -67,19 +59,7 @@ public class FadeEffect : MonoBehaviour
             currentTime += Time.deltaTime;
             alpha = currentTime / _fadeTime;
 
-            if (image != null)
-            {
-                Color imgColor = image.color;
-                imgColor.a = Mathf.Lerp(_imageMinAlpha, _imageMaxAlpha, alpha);
-                image.color = imgColor;
-            }
-            
-            if (text != null)
-            {
-                Color txtColor = text.color;
-                txtColor.a = Mathf.Lerp(_textMinAlpha, _textMaxAlpha, alpha);
-                text.color = txtColor;
-            }            
+            target.alpha = Mathf.Lerp(_minAlpha, _maxAlpha, alpha);
 
             yield return null;
         }
@@ -108,19 +88,7 @@ public class FadeEffect : MonoBehaviour
             currentTime += Time.deltaTime;
             alpha = currentTime / _fadeTime;
 
-            if (image != null)
-            {
-                Color imgColor = image.color;
-                imgColor.a = Mathf.Lerp(_imageMaxAlpha, _imageMinAlpha, alpha);
-                image.color = imgColor;
-            }
-
-            if (text != null)
-            {
-                Color txtColor = text.color;
-                txtColor.a = Mathf.Lerp(_textMaxAlpha, _textMinAlpha, alpha);
-                text.color = txtColor;
-            }
+            target.alpha = Mathf.Lerp(_maxAlpha, _minAlpha, alpha);
 
             yield return null;
         }

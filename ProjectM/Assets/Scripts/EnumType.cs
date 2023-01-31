@@ -1,10 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 public enum ItemType
 {
-    NULL = 0,
+    NULL = -1,
     WEAPONGUN,
     WEAPONSUB,
     WEAPONTHROW,
@@ -16,27 +12,27 @@ public enum ItemType
 
 public enum BulletType
 {
-    AMMORED = 0,
+    NULL = -1,
+    AMMORED,
     AMMOGREEN,
-    AMMOBLUE,
-    NULL
+    AMMOBLUE
 };
 
 public enum DefensiveType
 {
-    HELMET = 0,
+    NULL = -1, 
+    HELMET,
     ARMOR,
-    BAG,
-    NULL
+    BAG
 }
 
 public enum RecoverType
 {
-    BAND = 0,
+    NULL = -1,
+    BAND,
     KIT,
     SODA,
     DRUG,
-    NULL
 }
 
 public enum Phase
@@ -54,16 +50,35 @@ public enum Phase
     DECRESE5
 }
 
+public enum Step
+{
+    FIRST = 0,
+    SECOND,
+    THIRD,
+    FOURTH,
+    FINISH
+}
+
 public enum ThrowType
 {
-    GRENADE = 0,
+    NULL = -1,
+    GRENADE,
     FOG,
-    NULL
 }
 
 public enum InfoIdx
 {
     NAME = 0,
     WEAPON,
-    ISMAGNET
+    ISMAGNET,
+    ID
+}
+
+public enum Panel
+{
+    LOGIN = 0,
+    SELECTION,
+    CREATEROOM,
+    INROOM,
+    LOADING
 }

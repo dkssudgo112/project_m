@@ -10,9 +10,11 @@ public class UIManager : MonoBehaviour
 {
     //07.18. BellEmpty
     //임시수치. 이후에 수정해야할 변수들
-    public static UIManager _Instance;
+    public static UIManager Instance;
 
     #region UI Object
+    public GameObject _playerInfoView = null;
+
     [Header("상태바")]
     public GameObject _hPBar = null;
     public GameObject _sPBar = null;
@@ -27,6 +29,7 @@ public class UIManager : MonoBehaviour
     [Header("무기 슬롯")]
     public Button[] _weaponBtn = new Button[ConstNums.numberOfPlayerSlot];
     public Image[] _weaponImg = new Image[ConstNums.numberOfPlayerSlot];
+    public Image[] _weaponCoolImg = new Image[ConstNums.numberOfPlayerSlot];
     public Image[] _weaponSelectBox = new Image[ConstNums.numberOfPlayerSlot];
     public TextMeshProUGUI[] _weaponTxt = new TextMeshProUGUI[ConstNums.numberOfPlayerSlot];
     public TextMeshProUGUI _throwWeaponCount = new TextMeshProUGUI();
@@ -77,8 +80,12 @@ public class UIManager : MonoBehaviour
     public Image _pressFImg = null;
     public Image _pressFNameImg = null;
     public TextMeshProUGUI _pressFNameTxt = null;
-    public Image _reloadingImg = null;
-    public Image _recoveringImg = null;
+    public GameObject _actionView = null;
+    public Image _actionImg = null;
+    public Image _actionBackgroundImg = null;
+    public TextMeshProUGUI _actionTxt = null;
+    public GameObject _informView = null;
+    public GameObject _informPrefab = null;
 
     [Header("엔딩")]
     public GameObject _endingView = null;
@@ -90,6 +97,7 @@ public class UIManager : MonoBehaviour
     public TMP_Text _killCountTxt = null;
     public GameObject _watchingButton = null;
     public GameObject _leaveButton = null;
+    public GameObject _watchingView = null;
 
     public GameObject cursor = null;
     #endregion
@@ -121,15 +129,18 @@ public class UIManager : MonoBehaviour
     private Color32 _noneItemImageColor = new Color32(255, 255, 255, 60);
     private Color32 _alphaZeroColor = new Color32(255, 255, 255, 0);
     private Color32 _alphaOnColor = new Color32(0, 0, 0, 200);
+    private Color32 _greyColor = new Color32(170, 170, 170, 255);
     private Color32 _whiteColor = Color.white;
+    private Color32 _redHalfAlphaColor = new Color32(255, 50, 0, 200);
+    private Color32 _oragngeColor = new Color32(255, 120, 0, 255);
     private Color32 _clearColor = Color.clear;
     #endregion
 
     private void Awake()
     {
-        if (_Instance == null)
+        if (Instance == null)
         {
-            _Instance = this;
+            Instance = this;
         }
         else
         {
@@ -148,8 +159,8 @@ public class UIManager : MonoBehaviour
         ChangeCurSlot(ConstNums.subWeaponIndex);
         BindMap();
         BindNetworkView();
-        BindNotiImage();
         BindEndingView();
+        FindGameObject(ref _playerInfoView, "PlayerInfoView", true);
 
         graphicRaycaster = GetComponent<GraphicRaycaster>();
         pointerEventData = new PointerEventData(null);
@@ -168,26 +179,18 @@ public class UIManager : MonoBehaviour
         //우클릭 Item Drop 기능
         if (Input.GetMouseButtonDown(1))
         {
-            pointerEventData.position = Input.mousePosition;
-            List<RaycastResult> raycastResults = new List<RaycastResult>();
-            graphicRaycaster.Raycast(pointerEventData, raycastResults);
+            FindClickedButton();
+        }
 
-            if (raycastResults.Count > 0)
-            {
-                UIButton uiBtn = null;
-                Debug.Log(raycastResults[0]);
-                if (raycastResults[0].gameObject.TryGetComponent<UIButton>(out uiBtn))
-                {
-                    Debug.Log("It's a Button");
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            _minimapMask.SetActive(true);
+            _bigmapMask.SetActive(false);
+            _timeView.SetActive(true);
+            miniMapOrBigMap = false;
 
-                    //우클릭 대상 버튼 정보 전달
-                    ValidCheckDitchItem(uiBtn);
-                }
-                else
-                {
-                    Debug.Log("It's not a Button");
-                }
-            }
+            _notiImage.SetActive(false);
+            notiOn = false;
         }
 
         if (Input.GetKeyDown(KeyCode.M))
@@ -210,7 +213,7 @@ public class UIManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.F1))
         {
-            if(notiOn == true)
+            if (notiOn == true)
             {
                 _notiImage.SetActive(false);
                 notiOn = false;
@@ -226,391 +229,136 @@ public class UIManager : MonoBehaviour
 
     }
 
+    private void FindClickedButton()
+    {
+        pointerEventData.position = Input.mousePosition;
+        List<RaycastResult> raycastResults = new List<RaycastResult>();
+        graphicRaycaster.Raycast(pointerEventData, raycastResults);
+
+        if (raycastResults.Count > 0)
+        {
+            UIButton uiBtn = null;
+            Debug.Log(raycastResults[0]);
+            if (raycastResults[0].gameObject.TryGetComponent<UIButton>(out uiBtn))
+            {
+                //우클릭 대상 버튼 정보 전달
+                CallDropItemByItemType(uiBtn);
+            }
+            else
+            {
+                Debug.Log("It's not a Button");
+            }
+        }
+    }
+
     #region BindUI
     //HPBar 매칭
     private void BindHPBar()
     {
-        GameObject obj = null;
-        Image img = null;
-
-        obj = GameObject.Find("HP_Bar");
-        if (obj == null)
-        {
-            Debug.Log("Can't find HP_Bar");
-        }
-        else
-        {
-            _hPBar = obj;
-        }
-
-        obj = GameObject.Find("HP_Image");
-        if (obj.TryGetComponent<Image>(out img))
-        {
-            _hPBarImage = img;
-        }
-        else
-        {
-            Debug.Log("Can't find HP_Image");
-        }
+        FindGameObject(ref _hPBar, "HP_Bar", true);
+        BindImgInitSetting(ref _hPBarImage, "HP_Image", _greyColor, true);
     }
 
     //SPBar 매칭
     private void BindSPBar()
     {
-        GameObject obj = null;
-        Image img = null;
-
-        obj = GameObject.Find("SP_Bar");
-        if (obj == null)
-        {
-            Debug.Log("Can't find SP_Bar");
-        }
-        else
-        {
-            _sPBar = obj;
-        }
-
-        obj = GameObject.Find("SP_Image");
-        if (obj.TryGetComponent<Image>(out img))
-        {
-            _sPBarImage = img;
-        }
-        else
-        {
-            Debug.Log("Can't find SP_Image");
-        }
-        _sPBar.SetActive(false);
+        BindImgInitSetting(ref _sPBarImage, "SP_Image", _whiteColor, true);
+        FindGameObject(ref _sPBar, "SP_Bar", false);
     }
 
     private void BindMap()
     {
-        GameObject obj1 = null;
-        GameObject obj2 = null;
-
-        obj1 = GameObject.Find("MinimapMask");
-        if (obj1 == null)
-        {
-            Debug.Log("Can't find minimap");
-        }
-        else
-        {
-            _minimapMask = obj1;
-        }
-        obj2 = GameObject.Find("BigMapMask");
-        if (obj2 == null)
-        {
-            Debug.Log("Can't find bigmap");
-        }
-        else
-        {
-            _bigmapMask = obj2;
-            _bigmapMask.SetActive(false);
-        }
-
+        FindGameObject(ref _minimapMask, "MinimapMask", true);
+        FindGameObject(ref _bigmapMask, "BigMapMask", false);
     }
 
     //탄약 슬롯 초기화, 매칭
     private void BindAmmoSlot()
     {
-        Button btn = null;
-        TextMeshProUGUI txt = null;
-        Image img = null;
-        GameObject obj = null;
-
         for (int i = 0; i < ConstNums.numberOfItemAmmo; i++)
         {
-            obj = GameObject.Find($"ammoBtn_{i}");
-            if (obj.TryGetComponent<Button>(out btn))
-            {
-                _ammoBtn[i] = btn;
-                _ammoBtn[i].GetComponent<Image>().color = _noneItemBackgroundColor;
-                _ammoBtn[i].GetComponent<UIButton>().EnterInitialValue(ItemType.AMMO, i);
-            }
-            else
-            {
-                Debug.Log($"Can't Find ammoBtn_{i}");
-            }
-
-            obj = GameObject.Find($"ammoTxt_{i}");
-            if (obj.TryGetComponent<TextMeshProUGUI>(out txt))
-            {
-                _ammoTxt[i] = txt;
-                _ammoTxt[i].color = _noneItemImageColor;
-                _ammoTxt[i].text = "0";
-                _ammoTxt[i].raycastTarget = false;
-            }
-            else
-            {
-                Debug.Log($"Can't Find ammoTxt_{i}");
-            }
-
-            obj = GameObject.Find($"ammoImg_{i}");
-            if (obj.TryGetComponent<Image>(out img))
-            {
-                _ammoImg[i] = img;
-                _ammoImg[i].color = _noneItemImageColor;
-                _ammoImg[i].raycastTarget = false;
-            }
-            else
-            {
-                Debug.Log($"Can't Find ammoImg_{i}");
-            }
+            BindUIBtnInitSetting(ref _ammoBtn[i], $"ammoBtn_{i}", _noneItemBackgroundColor, ItemType.AMMO, i);
+            BindTxtInitSetting(ref _ammoTxt[i], $"ammoTxt_{i}", "0", _noneItemImageColor);
+            BindImgInitSetting(ref _ammoImg[i], $"ammoImg_{i}", _noneItemImageColor, true);
         }
     }
 
     //무기 슬롯 초기화, 매칭
     private void BindWeaponSlot()
     {
-        Button btn = null;
-        TextMeshProUGUI txt = null;
-        Image img = null;
-        GameObject obj = null;
-
-        obj = GameObject.Find("weaponTxt_itemCount");
-        if(obj.TryGetComponent<TextMeshProUGUI>(out txt))
-        {
-            _throwWeaponCount = txt;
-            _throwWeaponCount.text = "";
-            _throwWeaponCount.raycastTarget = false;
-        }
-
         for (int i = 0; i < ConstNums.numberOfPlayerSlot; i++)
         {
-            obj = GameObject.Find($"weaponBtn_{i}");
-            if (obj.TryGetComponent<Button>(out btn))
+            ItemType itemType;
+            if (i < ConstNums.subWeaponIndex)
             {
-                _weaponBtn[i] = btn;
-                _weaponBtn[i].GetComponent<Image>().color = _clearColor;
-                if (i < ConstNums.subWeaponIndex)
-                {
-                    _weaponBtn[i].GetComponent<UIButton>().EnterInitialValue(ItemType.WEAPONGUN, i);
-                }
-                else if (i == ConstNums.subWeaponIndex)
-                {
-                    _weaponBtn[i].GetComponent<UIButton>().EnterInitialValue(ItemType.WEAPONSUB, i);
-                }
-                else
-                {
-                    _weaponBtn[i].GetComponent<UIButton>().EnterInitialValue(ItemType.WEAPONTHROW, i);
-                }
+                itemType = ItemType.WEAPONGUN;
+            }
+            else if (i == ConstNums.subWeaponIndex)
+            {
+                itemType = ItemType.WEAPONSUB;
             }
             else
             {
-                Debug.Log($"Can't Find weaponBtn_{i}");
+                itemType = ItemType.WEAPONTHROW;
             }
 
-            obj = GameObject.Find($"weaponTxt_{i}");
-            if (obj.TryGetComponent<TextMeshProUGUI>(out txt))
-            {
-                _weaponTxt[i] = txt;
-                _weaponTxt[i].text = "";
-                _weaponTxt[i].raycastTarget = false;
-            }
-            else
-            {
-                Debug.Log($"Can't Find weaponTxt_{i}");
-            }
-
-            obj = GameObject.Find($"weaponImg_{i}");
-            if (obj.TryGetComponent<Image>(out img))
-            {
-                _weaponImg[i] = img;
-                _weaponImg[i].color = _alphaZeroColor;
-                _weaponImg[i].raycastTarget = false;
-            }
-            else
-            {
-                Debug.Log($"Can't Find weaponImg_{i}");
-            }
-
-            obj = GameObject.Find($"weaponBoxImg_{i}");
-            if(obj.TryGetComponent<Image>(out img))
-            {
-                _weaponSelectBox[i] = img;
-                _weaponSelectBox[i].color = _alphaZeroColor;
-                _weaponSelectBox[i].raycastTarget = false;
-            }
+            BindUIBtnInitSetting(ref _weaponBtn[i], $"weaponBtn_{i}", _clearColor, itemType, i);
+            BindTxtInitSetting(ref _weaponTxt[i], $"weaponTxt_{i}", "", _whiteColor);
+            BindImgInitSetting(ref _weaponImg[i], $"weaponImg_{i}", _alphaZeroColor, true);
+            BindImgInitSetting(ref _weaponCoolImg[i], $"weaponCoolImg_{i}", _alphaZeroColor, true);
+            BindImgInitSetting(ref _weaponSelectBox[i], $"weaponBoxImg_{i}", _alphaZeroColor, true);
         }
+        BindTxtInitSetting(ref _throwWeaponCount, "weaponTxt_itemCount", "", _whiteColor);
     }
 
     //현재 총알 슬롯 초기화, 매칭
     private void BindCurAmmoSlot()
     {
-        TextMeshProUGUI txt = null;
-        Image img = null;
-        GameObject obj = null;
-
-        obj = GameObject.Find("BulletView");
-        if (obj == null)
-        {
-            Debug.Log("Can't find bulletView");
-        }
-        else
-        {
-            _curAmmoView = obj;
-        }
-
         for (int i = 0; i < _curAmmoViewNum; i++)
         {
-            obj = GameObject.Find($"bulletImg_{i}");
-            if (obj.TryGetComponent<Image>(out img))
-            {
-                _curAmmoImg[i] = img;
-            }
-            else
-            {
-                Debug.Log($"Can't Find bulletImg_{i}");
-            }
-
-            obj = GameObject.Find($"bulletTxt_{i}");
-            if (obj.TryGetComponent<TextMeshProUGUI>(out txt))
-            {
-                _curAmmoTxt[i] = txt;
-            }
-            else
-            {
-                Debug.Log($"Can't Find bulletTxt_{i}");
-            }
+            BindImgInitSetting(ref _curAmmoImg[i], $"bulletImg_{i}", _alphaOnColor, true);
+            BindTxtInitSetting(ref _curAmmoTxt[i], $"bulletTxt_{i}", "0", _whiteColor);
         }
-        _curAmmoView.gameObject.SetActive(false);
+        FindGameObject(ref _curAmmoView, "BulletView", false);
     }
 
     //방어구 슬롯 초기화, 매칭
     private void BindDefSlot()
     {
-        Button btn = null;
-        TextMeshProUGUI txt = null;
-        Image img = null;
-        GameObject obj = null;
-
         for (int i = 0; i < ConstNums.numberOfItemDefensive; i++)
         {
-            obj = GameObject.Find($"defBtn_{i}");
-            if (obj.TryGetComponent<Button>(out btn))
-            {
-                _defBtn[i] = btn;
-                _defBtn[i].GetComponent<Image>().color = _clearColor;
-                _defBtn[i].GetComponent<UIButton>().EnterInitialValue(ItemType.DEFENSIVE, i);
-            }
-            else
-            {
-                Debug.Log($"Can't Find defBtn_{i}");
-            }
-
-            obj = GameObject.Find($"defTxt_{i}");
-            if (obj.TryGetComponent<TextMeshProUGUI>(out txt))
-            {
-                _defTxt[i] = txt;
-                _defTxt[i].color = _alphaZeroColor;
-                _defTxt[i].text = "0";
-                _defTxt[i].raycastTarget = false;
-            }
-            else
-            {
-                Debug.Log($"Can't Find defTxt_{i}");
-            }
-
-            obj = GameObject.Find($"defImg_{i}");
-            if (obj.TryGetComponent<Image>(out img))
-            {
-                _defImg[i] = img;
-                _defImg[i].color = _alphaZeroColor;
-                _defImg[i].raycastTarget = false;
-            }
-            else
-            {
-                Debug.Log($"Can't Find defImg_{i}");
-            }
+            BindUIBtnInitSetting(ref _defBtn[i], $"defBtn_{i}", _clearColor, ItemType.DEFENSIVE, i);
+            BindTxtInitSetting(ref _defTxt[i], $"defTxt_{i}", "", _whiteColor);
+            BindImgInitSetting(ref _defImg[i], $"defImg_{i}", _alphaZeroColor, true);
         }
     }
 
     //회복류 슬롯 초기화, 매칭
     private void BindRecoverySlot()
     {
-        Button btn = null;
-        TextMeshProUGUI txt = null;
-        Image img = null;
-        GameObject obj = null;
-
         for (int i = 0; i < ConstNums.numberOfItemRecovery; i++)
         {
-            obj = GameObject.Find($"recoverBtn_{i}");
-            if (obj.TryGetComponent<Button>(out btn))
-            {
-                _recoverBtn[i] = btn;
-                _recoverBtn[i].GetComponent<Image>().color = _noneItemBackgroundColor;
-                _recoverBtn[i].GetComponent<UIButton>().EnterInitialValue(ItemType.RECOVERY, i);
-            }
-            else
-            {
-                Debug.Log($"Can't Find recoverBtn_{i}");
-            }
-
-            obj = GameObject.Find($"recoverTxt_{i}");
-            if (obj.TryGetComponent<TextMeshProUGUI>(out txt))
-            {
-                _recoverTxt[i] = txt;
-                _recoverTxt[i].color = _noneItemImageColor;
-                _recoverTxt[i].text = "0";
-                _recoverTxt[i].raycastTarget = false;
-            }
-            else
-            {
-                Debug.Log($"Can't Find recoverTxt_{i}");
-            }
-
-            obj = GameObject.Find($"recoverImg_{i}");
-            if (obj.TryGetComponent<Image>(out img))
-            {
-                _recoverImg[i] = img;
-                _recoverImg[i].color = _noneItemImageColor;
-                _recoverImg[i].raycastTarget = false;
-            }
-            else
-            {
-                Debug.Log($"Can't Find recoverImg_{i}");
-            }
+            BindUIBtnInitSetting(ref _recoverBtn[i], $"recoverBtn_{i}", _noneItemBackgroundColor, ItemType.RECOVERY, i);
+            BindTxtInitSetting(ref _recoverTxt[i], $"recoverTxt_{i}", "0", _noneItemImageColor);
+            BindImgInitSetting(ref _recoverImg[i], $"recoverImg_{i}", _noneItemImageColor, true);
         }
     }
 
     //배율 슬롯 초기화
     private void BindScopeSlot()
     {
-        Button btn = null;
-        TextMeshProUGUI txt = null;
-        GameObject obj = null;
-
-        obj = GameObject.Find("ScopeView");
-        _scopeView = obj;
-
+        FindGameObject(ref _scopeView, "ScopeView", true);
         for (int i = 0; i < ConstNums.numberOfItemScope; i++)
         {
-            obj = GameObject.Find($"scopeTxt_{i}");
-            if (obj.TryGetComponent<TextMeshProUGUI>(out txt))
-            {
-                _scopeTxt[i] = txt;
-                _scopeTxt[i].color = _whiteColor;
-                _scopeTxt[i].raycastTarget = false;
-            }
-            else
-            {
-                Debug.Log($"Can't Find scopeTxt_{i}");
-            }
+            int lense = 0;
+            lense = (i == 0) ? lense = 1 : lense = i << 1;
+            BindBtnInitSetting(ref _scopeBtn[i], $"scopeBtn_{i}", _noneItemBackgroundColor);
+            BindTxtInitSetting(ref _scopeTxt[i], $"scopeTxt_{i}", $"{lense}x", _whiteColor);
 
-            obj = GameObject.Find($"scopeBtn_{i}");
-            if (obj.TryGetComponent<Button>(out btn))
-            {
-                _scopeBtn[i] = btn;
-                _scopeBtn[i].GetComponent<Image>().color = _noneItemBackgroundColor;
-                int tempI = i;
-                // 배율 버튼 이벤트 매칭
-                _scopeBtn[tempI].onClick.AddListener(() => ChangeEyesight(tempI));
-                _scopeBtn[i].gameObject.SetActive(false);
-            }
-            else
-            {
-                Debug.Log($"Can't Find scopeBtn_{i}");
-            }
+            lense = i;
+            // 배율 버튼 이벤트 매칭
+            _scopeBtn[lense].onClick.AddListener(() => ChangeEyesight(lense));
+            _scopeBtn[i].gameObject.SetActive(false);
         }
         _scopeBtn[0].gameObject.SetActive(true);
         _scopeBtn[0].GetComponent<Image>().color = _alphaOnColor;
@@ -619,68 +367,20 @@ public class UIManager : MonoBehaviour
     // 각종 알림창
     private void BindNotiWindowView()
     {
-        Image img = null;
-        TextMeshProUGUI txt = null;
-        GameObject obj = null;
+        FindGameObject(ref _notiImage, "Notiimage", true);
 
-        obj = GameObject.Find("PressFView");
-        if (obj == null)
-        {
-            Debug.Log("Can't Find PressFView");
-        }
-        else
-        {
-            _pressFView = obj;
-        }
+        BindImgInitSetting(ref _pressFImg, "pressFImg", _alphaOnColor, true);
+        BindImgInitSetting(ref _pressFNameImg, "pressFNameImg", _alphaOnColor, true);
+        BindTxtInitSetting(ref _pressFNameTxt, "pressFNameTxt", "", _whiteColor);
+        FindGameObject(ref _pressFView, "PressFView", false);
 
-        obj = GameObject.Find("pressFImg");
-        if (obj.TryGetComponent<Image>(out img))
-        {
-            _pressFImg = img;
-            _pressFImg.color = _alphaOnColor;
-        }
-        else
-        {
-            Debug.Log($"Can't Find pressFImg");
-        }
+        BindTxtInitSetting(ref _actionTxt, "ActionTxt", "", _oragngeColor);
+        BindImgInitSetting(ref _actionBackgroundImg, "ActionBackgroundImg", _alphaOnColor, true);
+        BindImgInitSetting(ref _actionImg, "ActionImg", _whiteColor, true);
+        FindGameObject(ref _actionView, "ActionView", false);
 
-        obj = GameObject.Find("pressFNameImg");
-        if (obj.TryGetComponent<Image>(out img))
-        {
-            _pressFNameImg = img;
-            _pressFNameImg.color = _alphaOnColor;
-        }
-        else
-        {
-            Debug.Log($"Can't Find pressFNameImg");
-        }
-
-        obj = GameObject.Find("pressFNameTxt");
-        if (obj.TryGetComponent<TextMeshProUGUI>(out txt))
-        {
-            _pressFNameTxt = txt;
-            _pressFNameTxt.text = "";
-        }
-        else
-        {
-            Debug.Log("Can't Find pressFNameTxt");
-        }
-
-        _pressFView.gameObject.SetActive(false);
-
-        obj = GameObject.Find("reloadingImg");
-        if (obj.TryGetComponent<Image>(out img))
-        {
-            _reloadingImg = img;
-            _reloadingImg.gameObject.SetActive(false);
-        }
-
-        obj = GameObject.Find("recoveringImg");
-        if (obj.TryGetComponent<Image>(out img))
-        {
-            _recoveringImg = img;
-            _recoveringImg.gameObject.SetActive(false);
-        }
+        _informView = GameObject.Find("InformView");
+        _informPrefab = Resources.Load<GameObject>("TextResources/InformPrefab");
     }
 
     private void BindNetworkView()
@@ -697,15 +397,6 @@ public class UIManager : MonoBehaviour
         _guidePrefab = Resources.Load<GameObject>("TextResources/GuidePrefab");
     }
 
-    private void BindNotiImage()
-    {
-        _notiImage = GameObject.Find("Notiimage");
-        if(_notiImage == null)
-        {
-            Debug.Log("Can't Find Noti");
-        }
-    }
-
     private void BindEndingView()
     {
         _endingView = GameObject.Find("EndingView");
@@ -717,6 +408,7 @@ public class UIManager : MonoBehaviour
         _killCountTxt = GameObject.Find("KillCountTxt").GetComponent<TMP_Text>();
         _watchingButton = GameObject.Find("WatchingButton");
         _leaveButton = GameObject.Find("LeaveButton");
+        _watchingView = GameObject.Find("WatchingView");
         _endingTxt.gameObject.SetActive(false);
         _myRankingTxt.gameObject.SetActive(false);
         _ranking.gameObject.SetActive(false);
@@ -725,8 +417,59 @@ public class UIManager : MonoBehaviour
         _killCountTxt.gameObject.SetActive(false);
         _watchingButton.gameObject.SetActive(false);
         _leaveButton.gameObject.SetActive(false);
+        _watchingView.gameObject.SetActive(false);
         _endingView.SetActive(false);
-}
+    }
+
+    private void FindGameObject(ref GameObject gameObject, string objectName, bool active)
+    {
+        GameObject obj = null;
+        obj = GameObject.Find(objectName);
+        Debug.Assert(obj != null, $"Can't find {objectName}.");
+        gameObject = obj;
+        gameObject.gameObject.SetActive(active);
+    }
+
+    private void BindUIBtnInitSetting(ref Button btn, string objectName, Color32 color, ItemType itemType, int slotIndex)
+    {
+        GameObject obj = null;
+        obj = GameObject.Find(objectName);
+        Debug.Assert(obj != null, $"Can't find {objectName}.");
+        btn = obj.GetComponent<Button>();
+        btn.GetComponent<Image>().color = color;
+        btn.GetComponent<UIButton>().EnterInitialValue(itemType, slotIndex);
+    }
+
+    private void BindBtnInitSetting(ref Button btn, string objectName, Color32 color)
+    {
+        GameObject obj = null;
+        obj = GameObject.Find(objectName);
+        Debug.Assert(obj != null, $"Can't find {objectName}.");
+        btn = obj.GetComponent<Button>();
+        btn.GetComponent<Image>().color = color;
+    }
+
+    private void BindTxtInitSetting(ref TextMeshProUGUI txt, string objectName, string text, Color32 color)
+    {
+        GameObject obj = null;
+        obj = GameObject.Find(objectName);
+        Debug.Assert(obj != null, $"Can't find {objectName}.");
+        txt = obj.GetComponent<TextMeshProUGUI>();
+        txt.text = text;
+        txt.color = color;
+        txt.raycastTarget = false;
+    }
+
+    private void BindImgInitSetting(ref Image img, string objectName, Color32 color, bool active)
+    {
+        GameObject obj = null;
+        obj = GameObject.Find(objectName);
+        Debug.Assert(obj != null, $"Can't find {objectName}.");
+        img = obj.GetComponent<Image>();
+        img.color = color;
+        img.raycastTarget = false;
+        img.gameObject.SetActive(active);
+    }
     #endregion
 
     #region ClickEvent
@@ -767,79 +510,57 @@ public class UIManager : MonoBehaviour
         _playerInfo.ChangeScope(slotIndex * _scopeConvert);
     }
 
-    public void OnWatchingButtonClicked() => _endingView.SetActive(false);
+    public void OnWatchingButtonClicked()
+    {
+        _endingView.SetActive(false);
+        PlayerManager.Instance.MoveCameraToOthers();
+        _watchingView.SetActive(true);
+    }
 
-    public void OnLeaveButtonClicked() => NetworkManager.ExitGame();
+    public void OnLeaveButtonClicked() =>
+        NetworkManager.Instance.ExitGame();
+
+    public void OnNextButtonClicked() =>
+        PlayerManager.Instance._otherCamera.GetComponent<CameraManagerInWorld>()
+            .FindNext();
+        
+    public void OnPrevButtonClicked() =>
+        PlayerManager.Instance._otherCamera.GetComponent<CameraManagerInWorld>()
+            .FindPrev();
+
 
     //Item별 Switch문 구성
     //Item마다 작동방식이 달라서 Switch문으로 구성.
-    private void ValidCheckDitchItem(UIButton uiBtn)
+    private void CallDropItemByItemType(UIButton uiBtn)
     {
         int slotIndex = uiBtn.GetSlotIndex();
         switch (uiBtn.GetItemType())
         {
             case ItemType.WEAPONGUN:
                 {
-                    WeaponGun gun = _playerInfo._slotWeapon[slotIndex].GetWeapon().GetComponent<WeaponGun>();
-                    if (gun != null)
-                    {
-                        int gunBulletType = (int)gun.bulletType;
-
-                        _playerInfo._bulletSlot[gunBulletType].itemCount += _playerInfo._loadedBullet[slotIndex];
-                        _playerInfo._loadedBullet[slotIndex] = 0;
-
-                        ItemManager.DitchItem(gun, _playerInfo.transform.position, -(_player.CalcAttackDir()));
-                        _playerInfo._slotWeapon[slotIndex].ClearWeapon();
-
-                        RefreshSlotAmmo(gunBulletType, _playerInfo._bulletSlot[gunBulletType].itemCount);
-                        RefreshSlotWeapon(slotIndex, _playerInfo._slotWeapon[slotIndex].GetWeapon());
-                        
-                        // 현재 무기 == 버린 무기 일 때 TryChangeSlot해야한다.
-                        if(slotIndex == _curSlot)
-                        {
-                            _player.TryChangeSlot(ConstNums.subWeaponIndex);
-                        }
-                    }
+                    _player.DropWeaponGun(slotIndex);
                 }
                 break;
             case ItemType.WEAPONSUB:
                 {
-                    WeaponSub sub = _playerInfo._slotWeapon[slotIndex].GetWeapon().GetComponent<WeaponSub>();
-                    if (sub != _playerInfo._fist)
-                    {
-                        ItemManager.DitchItem(sub, _playerInfo.transform.position, -(_player.CalcAttackDir()));
-                        _playerInfo._slotWeapon[slotIndex].SetWeapon(_playerInfo._fist);
-                        RefreshSlotWeapon(slotIndex, _playerInfo._fist);
-                        if (_playerInfo.IsSubSlot(_curSlot))
-                        {
-                            _player.ChangeAnimFist();
-                        }
-                    }
+                    _player.DropWeaponSub(slotIndex);
                 }
                 break;
             case ItemType.WEAPONTHROW:
                 {
-                    Debug.Log("Ditch Weapon Throw");
+                    _player.DropWeaponThrow(slotIndex);
                 }
                 break;
             case ItemType.RECOVERY:
                 {
-                    if (_playerInfo._recoverSlot[slotIndex] != null && _playerInfo._recoverSlot[slotIndex].itemCount > 0)
-                    {
-                        ItemManager.DitchItem(_playerInfo._recoverSlot[slotIndex], _playerInfo.transform.position, -(_player.CalcAttackDir()));
-                        RefreshSlotRecovery(_playerInfo._recoverSlot[slotIndex]);
-                    }
+                    _player.DropItemRecovery(slotIndex);
                 }
                 break;
             case ItemType.DEFENSIVE:
                 break;
             case ItemType.AMMO:
                 {
-                    if (_playerInfo._bulletSlot[slotIndex] != null && _playerInfo._bulletSlot[slotIndex].itemCount > 0)
-                    {
-                        ItemManager.DitchItem(_playerInfo._bulletSlot[slotIndex], _playerInfo.transform.position, -(_player.CalcAttackDir()));
-                        RefreshSlotAmmo(slotIndex, _playerInfo._bulletSlot[slotIndex].itemCount);
-                    }
+                    _player.DropItemAmmo(slotIndex);
                 }
                 break;
             default:
@@ -849,23 +570,26 @@ public class UIManager : MonoBehaviour
                 break;
         }
     }
-
     #endregion
+    public void PlayerInfoViewOnOff(bool onOff)
+    {
+        _playerInfoView.SetActive(onOff);
+    }
 
     public void SendPlayerData(Player _player, PlayerInfo _playerInfo)
     {
         UIManager._player = _player;
         UIManager._playerInfo = _playerInfo;
 
-        RefreshSlotWeapon(ConstNums.subWeaponIndex, UIManager._playerInfo._fist);
+        RefreshSlotWeapon(ConstNums.subWeaponIndex, _playerInfo.GetFist());
     }
 
     //0721
     public void ChangeCurSlot(int curSlot)
     {
-        if(curSlot > ConstNums.throwWeaponIndex)
+        if (curSlot > ConstNums.weaponThrowIndex)
         {
-            curSlot = ConstNums.throwWeaponIndex;
+            curSlot = ConstNums.weaponThrowIndex;
         }
         _weaponBtn[_curSlot].GetComponent<Image>().color = _clearColor;
         _weaponSelectBox[_curSlot].color = _clearColor;
@@ -876,7 +600,10 @@ public class UIManager : MonoBehaviour
         if (_curSlot < ConstNums.subWeaponIndex)
         {
             _curAmmoView.gameObject.SetActive(true);
-            RefreshSlotBullet(_playerInfo._loadedBullet[_curSlot], _playerInfo.GetHavingBullet(_playerInfo.CastIntBulletType(_curSlot)));
+
+            int loadedBullet = _playerInfo.GetLoadedBullet(_curSlot);
+            int havingBullet = _playerInfo.GetHavingBullet(_playerInfo.CastIntBulletType(_curSlot));
+            RefreshSlotBullet(loadedBullet, havingBullet);
         }
         else
         {
@@ -891,12 +618,13 @@ public class UIManager : MonoBehaviour
     }
 
     private void UpdateCursor()
-    {     
+    {
         cursor.transform.position = Input.mousePosition;
     }
 
     public void ChangeActiveCursor(bool isChange)
     {
+        Cursor.visible = !isChange;
         cursor.SetActive(isChange);
     }
 
@@ -910,7 +638,7 @@ public class UIManager : MonoBehaviour
         float HPRatio;
         if (_isDead == false)
         {
-            HPRatio = _playerInfo._currentHP / _playerInfo._maxHP;
+            HPRatio = _playerInfo.GetCurrentHP() / _playerInfo.GetMaxHP();
             _hPBarImage.fillAmount = HPRatio;
         }
         else
@@ -918,23 +646,24 @@ public class UIManager : MonoBehaviour
             HPRatio = 0;
             _hPBarImage.fillAmount = HPRatio;
         }
-        byte red = 255;
+
         byte green = 255;
         byte blue = 255;
-        byte alpha = 255;
-
-        if (HPRatio == _maxHPRatio)
-        {
-            alpha = 100;
-        }
 
         if (HPRatio < _redHPRatio)
         {
             green = (byte)(int)(HPRatio * 255);
             blue = (byte)(int)(HPRatio * 255);
         }
-
-        _hPBarImage.GetComponent<Image>().color = new Color32(red, green, blue, alpha);
+        
+        if (Mathf.Approximately(HPRatio, _maxHPRatio))
+        {
+            _hPBarImage.color = _greyColor;
+        }
+        else
+        {
+            _hPBarImage.GetComponent<Image>().color = new Color32(255, green, blue, 255);
+        }
     }
 
     /// <summary>
@@ -945,12 +674,7 @@ public class UIManager : MonoBehaviour
         if (_isDead == false)
         {
             _sPBar.SetActive(true);
-            _sPBarImage.fillAmount = _playerInfo._currentSP / _playerInfo._maxSP;
-        }
-        else
-        {
-            _sPBarImage.fillAmount = 0;
-            _sPBar.SetActive(false);
+            _sPBarImage.fillAmount = _playerInfo.GetCurrentSP() / _playerInfo.GetMaxSP();
         }
 
         if (_sPBarImage.fillAmount <= 0)
@@ -976,26 +700,26 @@ public class UIManager : MonoBehaviour
         {
             _weaponImg[slotIndex].sprite = weapon.gameObject.GetComponent<SpriteRenderer>().sprite;
             _weaponImg[slotIndex].color = _whiteColor;
-            _weaponTxt[slotIndex].text = ($"{weapon.itemName}");
+            _weaponTxt[slotIndex].text = ($"{weapon.itemData.itemName}");
         }
     }
 
-    public void RefreshSlotThrowWeapon(Weapon weapon)
+    public void RefreshSlotWeaponThrow(WeaponThrow weapon)
     {
-        int throwIndex = ConstNums.throwWeaponIndex;
-        if (weapon == null)
+        int throwIndex = ConstNums.weaponThrowIndex;
+        if (weapon == null || weapon.itemData.itemCount == 0)
         {
             _weaponBtn[throwIndex].GetComponent<Image>().color = _clearColor;
             _weaponTxt[throwIndex].text = "";
             _weaponImg[throwIndex].color = _alphaZeroColor;
-            _throwWeaponCount.color = _alphaZeroColor;
+            _throwWeaponCount.text = "";
         }
         else
         {
             _weaponImg[throwIndex].sprite = weapon.gameObject.GetComponent<SpriteRenderer>().sprite;
             _weaponImg[throwIndex].color = _whiteColor;
-            _weaponTxt[throwIndex].text = ($"{weapon.itemName}");
-            _throwWeaponCount.text = ($"{weapon.itemCount}");
+            _weaponTxt[throwIndex].text = ($"{weapon.itemData.itemName}");
+            _throwWeaponCount.text = ($"{weapon.itemData.itemCount}");
         }
     }
 
@@ -1010,7 +734,7 @@ public class UIManager : MonoBehaviour
         _defImg[slotIndex].sprite = def.gameObject.GetComponent<SpriteRenderer>().sprite;
         _defImg[slotIndex].color = _whiteColor;
         _defTxt[slotIndex].color = _whiteColor;
-        _defTxt[slotIndex].text = $"Lv {def.level.ToString()}";
+        _defTxt[slotIndex].text = $"Lv {def.itemData.level.ToString()}";
     }
 
     /// <summary>
@@ -1022,8 +746,8 @@ public class UIManager : MonoBehaviour
     {
         int slotIndex = _playerInfo.CastIntRecoverType(rec);
 
-        _recoverTxt[slotIndex].text = rec.itemCount.ToString();
-        if (rec.itemCount > 0)
+        _recoverTxt[slotIndex].text = rec.itemData.itemCount.ToString();
+        if (rec.itemData.itemCount > 0)
         {
             _recoverBtn[slotIndex].GetComponent<Image>().color = _alphaOnColor;
             _recoverImg[slotIndex].color = _whiteColor;
@@ -1104,7 +828,7 @@ public class UIManager : MonoBehaviour
     {
         RebuildLayout(_scopeView.GetComponent<RectTransform>());
 
-        int lensIndex = (curEyesight - _playerInfo._basicEyesight) / _scopeConvert;
+        int lensIndex = (curEyesight - _playerInfo.GetBasicEyeSight())  / _scopeConvert;
         for (int i = 0; i < ConstNums.numberOfItemScope; i++)
         {
             _scopeBtn[i].GetComponent<Image>().color = _alphaOnColor;
@@ -1116,6 +840,16 @@ public class UIManager : MonoBehaviour
         _scopeTxt[lensIndex].fontSize = _bigFont;
 
         RebuildLayout(_scopeView.GetComponent<RectTransform>());
+    }
+
+    /// <summary>
+    /// slotIndex의 Scope 버튼이 현재 활성화 상태인지 확인하는 함수 
+    /// </summary>
+    /// <param name="slotIndex"></param>
+    /// <returns></returns>
+    public bool IsScopeSlotActive(int slotIndex)
+    {
+        return _scopeBtn[slotIndex].gameObject.activeInHierarchy;
     }
 
     /// <summary>
@@ -1133,17 +867,47 @@ public class UIManager : MonoBehaviour
         _pressFView.gameObject.SetActive(false);
     }
 
-    public void SetActiveReloadingView(bool onOff)
+    public void PlayActionViewOn(string action, float usingCooltime)
     {
-        _reloadingImg.gameObject.SetActive(onOff);
+        _actionView.SetActive(true);
+        _actionTxt.text = action;
+        StartCoroutine("ActionViewFillAmount", usingCooltime);
     }
 
-    public void SetActiveRecoveringView(bool onOff)
+    public void PlayActionViewOff()
     {
-        _recoveringImg.gameObject.SetActive(onOff);
+        _actionView.SetActive(false);
+        StopCoroutine("ActionViewFillAmount");
     }
 
+    public IEnumerator ActionViewFillAmount(float maxValue)
+    {
+        float value = 0;
+        for (float time = 0; time < maxValue; time += Time.deltaTime)
+        {
+            value = time / maxValue;
+            _actionImg.fillAmount = value;
+            yield return null;
+        }
+    }
 
+    public void PlayWeaponCooltimeView(int slotIndex, float attackCooltime)
+    {
+        _weaponCoolImg[slotIndex].color = _redHalfAlphaColor;
+        StartCoroutine(WeaponViewFillAmount(slotIndex, attackCooltime));
+    }
+
+    public IEnumerator WeaponViewFillAmount(int slotIndex, float maxValue)
+    {
+        float value = 0;
+        for (float time = 0; time < maxValue; time += Time.deltaTime)
+        {
+            value = 1 - time / maxValue;
+            _weaponCoolImg[slotIndex].fillAmount = value;
+            yield return null;
+        }
+        _weaponCoolImg[slotIndex].color = _alphaZeroColor;
+    }
     // 08.09_LookA ~
 
     // 현재 플레이어 수 표시
@@ -1185,6 +949,20 @@ public class UIManager : MonoBehaviour
         _killCountTxt.text = ($"{kills}");
     }
 
+    public void CreateInformText(string txt)
+    {
+        if(_informView.transform.childCount > 0)
+        {
+            _informView.transform.GetChild(0).GetComponent<FadeEffect>().Stop();
+        }
+
+        GameObject informText = Instantiate(_informPrefab);
+        informText.transform.SetParent(_informView.transform);
+        informText.transform.localScale = Vector3.one;
+        informText.transform.position.Set(0, -300, 0);
+        informText.GetComponent<TMP_Text>().text = txt;
+    }
+
     // 페이즈 가이드 텍스트 생성
     public void CreateGuide(int phase, float time)
     {
@@ -1211,7 +989,7 @@ public class UIManager : MonoBehaviour
         }
         else    // Decrease Phase
         {
-            txt = MakeColor($"Phase {phase} : 자기장 접근 중! 안쪽으로 이동하세요", "red");
+            txt = MakeColor($"Phase {phase} : 자기장 접근 중! <br>안쪽으로 이동하세요", "red");
         }
 
         guideText.GetComponent<TMP_Text>().text = txt;
@@ -1268,7 +1046,7 @@ public class UIManager : MonoBehaviour
         {
             txt = $"{enemyInfo[(int)InfoIdx.NAME]} 님의 {enemyInfo[(int)InfoIdx.WEAPON]}(으)로 인해 당신이 사망했습니다.";
         }
-        
+
         killLog.transform.GetChild(0).GetComponent<TMP_Text>().text = txt;
     }
 

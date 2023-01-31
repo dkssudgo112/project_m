@@ -6,11 +6,6 @@ public class WeaponSub : Weapon
 {
     float atkSizeX, atkSizeY;
 
-    public override void ParseData()
-    {
-        base.ParseData();
-    }
-
     public override void Attack(Vector2 direction, Vector2 position)
     {
         Collider2D[] collider2Ds = Physics2D.OverlapBoxAll(direction + position, new Vector2(atkSizeX, atkSizeY), 0);

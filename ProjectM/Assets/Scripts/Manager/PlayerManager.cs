@@ -1,139 +1,214 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
-using Photon.Realtime;
 
-public class PlayerManager : MonoBehaviourPunCallbacks
+public class PlayerManager : MonoBehaviourPun
 {
     public static PlayerManager Instance;
 
-    private static PhotonView _photonView = null;
+    public GameObject _otherCamera = null;
+    private PhotonView _photonView = null;
 
-    private static int _playerID = 0;
-    private static string _playerName = null;
-    private static bool _isDead = false;
-    private static int _killCount = 0;
-    private static byte _rank = 0;
+    private bool _isDead = false;
+    private byte _rank = 0;
+    private int _killCount = 0;
+    private int _playerID = 0;
+    private string _playerName = "";
 
-    public static bool _isMyPlayerDead = false;
+    #region UNITY
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Debug.Log($"Fail : instantiate PlayerManager.");
+        }
+
+        _photonView = GetComponent<PhotonView>();
+        _otherCamera = Resources.Load<GameObject>("CameraManager");
+    }
 
     void Start()
     {
-        Instance = this;
-
         _playerID = PhotonNetwork.LocalPlayer.ActorNumber;
-        _playerName = PhotonNetwork.LocalPlayer.NickName;
-        _photonView = GetComponent<PhotonView>();
-
-        Ending(!_isDead);
+        _playerName = PhotonNetwork.LocalPlayer.NickName;   
     }
 
-    public static string GetName() => _playerName;
+    #endregion
 
-    public static void NotifyDeath(object[] enemyInfo)
+    #region PUBLIC
+
+    public void SetDead(bool isDead) =>
+        _isDead = isDead;
+
+    public bool IsDead() =>
+        _isDead;
+
+    public int GetID() =>
+        _playerID;
+
+    public string GetName() =>
+        _playerName;
+
+    // 킬로그 본인 알림
+    public void NotifyDeath(object[] enemyInfo)
     {
         if (_isDead == false)
         {
             _isDead = true;
-            _rank = NetworkManager.GetAlive();
+            _rank = NetworkManager.Instance.GetAlive();
             _photonView.RPC("RPC_NotifyDeath", RpcTarget.AllBufferedViaServer, _playerName, enemyInfo);
-            NetworkManager.DecreaseAlive();
-            UIManager._Instance.CreateBottomKillLog(enemyInfo, _killCount, _isDead);
+            NetworkManager.Instance.DecreaseAlive(true);
+            UIManager.Instance.CreateBottomKillLog(enemyInfo, _killCount, _isDead);
 
             OnDeath();
         }
     }
 
-    public static void NotifyDeathAI(string AIName, object[] enemyInfo)
+    // 킬로그 전체 알림
+    [PunRPC]
+    private void RPC_NotifyDeath(string playerName, object[] enemyInfo)
     {
-        _photonView.RPC("RPC_NotifyDeathAI", RpcTarget.AllBufferedViaServer, AIName, enemyInfo);
-        NetworkManager.DecreaseAlive();
+        int enemyID = (int)enemyInfo[(int)InfoIdx.ID];
+        if (enemyID == _playerID)
+        {
+            object[] deadInfo = (object[])enemyInfo.Clone();
+            deadInfo[(int)InfoIdx.NAME] = playerName;
+
+            NotifyKilling(deadInfo);
+        }
+        UIManager.Instance.CreateTopKillLog(playerName, enemyInfo);
     }
 
-    public static void OnDeath()
+    public void NotifyDeathAI(string AIName, object[] enemyInfo)
     {
-        if (NetworkManager.IsEnd())
+        _photonView.RPC("RPC_NotifyDeathAI", RpcTarget.AllBufferedViaServer, AIName, enemyInfo);
+        NetworkManager.Instance.DecreaseAlive(false);
+    }
+
+    [PunRPC]
+    private void RPC_NotifyDeathAI(string AIName, object[] enemyInfo)
+    {
+        int enemyID = (int)enemyInfo[(int)InfoIdx.ID];
+        if (enemyID == _playerID)
+        {
+            object[] deadInfo = (object[])enemyInfo.Clone();
+            deadInfo[(int)InfoIdx.NAME] = AIName;
+
+            NotifyKilling(deadInfo);
+        }
+        UIManager.Instance.CreateTopKillLog(AIName, enemyInfo);
+    }
+
+    // 킬러에게 알림
+    private void NotifyKilling(object[] deadInfo)
+    {
+        _killCount++;
+        UIManager.Instance.CreateBottomKillLog(deadInfo, _killCount, _isDead);
+    }
+
+    public void GameOver() =>
+        OnEnd(!_isDead);
+
+    public void MoveCameraToOthers()
+    {
+        _otherCamera = Instantiate(_otherCamera);
+    }
+
+    #endregion
+
+    #region EVENT
+
+    private void OnDeath()
+    {
+        if (NetworkManager.Instance.IsEnd())
         {
             return;
         }
 
-        Ending(!_isDead);
+        UIManager.Instance.PlayerInfoViewOnOff(false);
+
+        GameOver();
     }
 
-    public static bool IsDead() => _isDead;
-
-    public static void CheckWinner() => Ending(!_isDead);
-
-    public static void Ending(bool isWinner)
+    private void OnEnd(bool isWinner)
     {
-        Cursor.visible = true;
-        UIManager._Instance.ChangeActiveCursor(false);
+        UIManager.Instance.ChangeActiveCursor(false);
 
         if (isWinner == true)
         {
-            _rank = NetworkManager.GetAlive();
-            UIManager._Instance.RefreshWinner();
+            _rank = NetworkManager.Instance.GetAlive();
+            UIManager.Instance.RefreshWinner();
         }
         else
         {
-            UIManager._Instance.RefreshLoser();
+            UIManager.Instance.RefreshLoser();
         }
 
-        UIManager._Instance.RefreshRanking(_rank, NetworkManager.GetMaxPlayers());
-        UIManager._Instance.RefreshKills(_killCount);
+        UIManager.Instance.RefreshRanking(_rank, NetworkManager.Instance.GetMaxPlayers());
+        UIManager.Instance.RefreshKills(_killCount);
 
-        if (NetworkManager.GetAlive() == 1)
+        if (NetworkManager.Instance.GetAlive() == 1)
         {
-            UIManager._Instance._watchingButton.SetActive(false);
+            UIManager.Instance._watchingButton.SetActive(false);
+            UIManager.Instance._watchingView.SetActive(false);
+            UIManager.Instance._leaveButton.SetActive(true);
         }
 
-        Instance.PlayEnding();
+        PlayEnding();
     }
 
-    public void PlayEnding()
+    #endregion
+
+    #region PRIVATE
+
+    private void PlayEnding()
     {
         float phase = 0;
         float startTime = 1f;
         float delay = 3f;
         GameObject obj;
 
-        obj = UIManager._Instance._endingView;
+        obj = UIManager.Instance._endingView;
         StartCoroutine(SetActiveObj(obj, true, startTime));
 
-        while (phase < 5)
+        while (phase < (byte)Step.FINISH)
         {
             // 순차적으로 UI 활성화
-            if (phase == 0)
+            if (phase == (byte)Step.FIRST)
             {
-                obj = UIManager._Instance._endingTxt.gameObject;
+                obj = UIManager.Instance._endingTxt.gameObject;
                 StartCoroutine(SetActiveObj(obj, true, delay + phase));
 
-                obj = UIManager._Instance._leaveButton;
-                StartCoroutine(SetActiveObj(obj, true, delay + phase));
+                obj = UIManager.Instance._leaveButton;
+                //StartCoroutine(SetActiveObj(obj, true, delay + phase));
 
-                obj = UIManager._Instance._watchingButton;
-                StartCoroutine(SetActiveObj(obj, !NetworkManager.IsEnd(), delay + phase));
+                obj = UIManager.Instance._watchingButton;
+                StartCoroutine(SetActiveObj(obj, !NetworkManager.Instance.IsEnd(), delay + phase));
             }
-            else if (phase == 1)
+            else if (phase == (byte)Step.SECOND)
             {
-                obj = UIManager._Instance._myRankingTxt.gameObject;
+                obj = UIManager.Instance._myRankingTxt.gameObject;
                 StartCoroutine(SetActiveObj(obj, true, delay + phase));
             }
-            else if (phase == 2)
+            else if (phase == (byte)Step.THIRD)
             {
-                obj = UIManager._Instance._ranking.gameObject;
+                obj = UIManager.Instance._ranking.gameObject;
                 StartCoroutine(SetActiveObj(obj, true, delay + phase));
 
-                obj = UIManager._Instance._killCount.gameObject;
+                obj = UIManager.Instance._killCount.gameObject;
                 StartCoroutine(SetActiveObj(obj, true, delay + phase));
             }
             else
             {
-                obj = UIManager._Instance._rankingTxt.gameObject;
+                obj = UIManager.Instance._rankingTxt.gameObject;
                 StartCoroutine(SetActiveObj(obj, true, delay + phase));
 
-                obj = UIManager._Instance._killCountTxt.gameObject;
+                obj = UIManager.Instance._killCountTxt.gameObject;
                 StartCoroutine(SetActiveObj(obj, true, delay + phase));
             }
 
@@ -145,42 +220,6 @@ public class PlayerManager : MonoBehaviourPunCallbacks
     {
         yield return new WaitForSeconds(delay);
         obj.SetActive(state);
-    }
-
-    #region PUN RPC
-
-    // 킬로그 전체 알림
-    [PunRPC]
-    private void RPC_NotifyDeath(string playerName, object[] enemyInfo)
-    {
-        if (((string)enemyInfo[(int)InfoIdx.NAME]).Equals(_playerName))
-        {
-            object[] deadInfo = (object[])enemyInfo.Clone();
-            deadInfo[(int)InfoIdx.NAME] = playerName;
-
-            KillByYou(deadInfo);
-        }
-        UIManager._Instance.CreateTopKillLog(playerName, enemyInfo);
-    }
-
-    [PunRPC]
-    private void RPC_NotifyDeathAI(string AIName, object[] enemyInfo)
-    {
-        if (((string)enemyInfo[(int)InfoIdx.NAME]).Equals(_playerName))
-        {
-            object[] deadInfo = (object[])enemyInfo.Clone();
-            deadInfo[(int)InfoIdx.NAME] = AIName;
-
-            KillByYou(deadInfo);
-        }
-        UIManager._Instance.CreateTopKillLog(AIName, enemyInfo);
-    }
-
-    // 하단 킬로그 킬한 사람에게 알림
-    private void KillByYou(object[] deadInfo)
-    {
-        _killCount++;
-        UIManager._Instance.CreateBottomKillLog(deadInfo, _killCount, _isDead);
     }
 
     #endregion

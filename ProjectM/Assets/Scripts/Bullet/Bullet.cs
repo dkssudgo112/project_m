@@ -9,7 +9,7 @@ public class Bullet : MonoBehaviour
     private const float sizeMaxBullet = 1.5f;
     private const float sizeUpTickSpeed = 2.0f;
     private const float colliderDisactRange = 0.75f;
-    private const float basicColliRadiusBullet = 0.5f;
+    private const float basicColliRadiusBullet = 1.0f;
 
     public float _bulletSpeed = 0;
 
@@ -75,6 +75,14 @@ public class Bullet : MonoBehaviour
     {
         if (collision != null)
         {
+            int id = (int)_ownerInfo[(int)InfoIdx.ID];
+
+            if ((collision.CompareTag("Player") && (id == collision.gameObject.GetPhotonView().Owner.ActorNumber))
+                || (collision.CompareTag("AI") && (id == collision.gameObject.GetPhotonView().ViewID)))
+            {
+                return;
+            }
+
             IDamageable target = null;
 
             if ( collision.TryGetComponent(out target))

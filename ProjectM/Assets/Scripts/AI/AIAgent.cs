@@ -1,37 +1,29 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
-
 using Photon.Pun;
-
-
 
 public class AIAgent : Agent, IDamageable
 {
-    private const float AIDamageToPlayer = 50.0f;
-    private const float AIDamageToObject = 100.0f;
-    private const float AIAttackRange = 20.0f;
-    private const float MinAIAttackRange = 2.0f;
-    private const float AIAttackLatency = 0.4f;
+    private const float aiDamageToPlayer = 50.0f;
+    private const float aiDamageToObject = 100.0f;
+    private const float aiAttackRange = 20.0f;
+    private const float minAIAttackRange = 2.0f;
+    private const float aiAttackLatency = 0.4f;
     private const float timerWaterEffect = 0.3f;
-
     private const float objectDistance = 80.0f;
     private const float mapDistance = 200.0f;
-
     private const int maxHP = 1500;
 
+    public MagnetActivator _activator;
     public AudioClip _audioFootStep = null;
     public AudioClip _audioFootStepInWater = null;
-
+    public AudioClip _audioSrcHit = null;
     public string _AIname = "";
     public float _currentHP = 1000;
     public float _basicSpeed = 5f;
-    public MagnetActivator _activator;
-
+    
     private AudioSource _audioSource = null;
     private Rigidbody2D _rbody = null;
     private Animator _anim = null;
@@ -41,56 +33,20 @@ public class AIAgent : Agent, IDamageable
     private bool _beingMove = false;
     private bool _canFire = true;
     private bool _isDead = false;
-    private bool isOnRiver = false;
-
-    private string[] collidabelayers = { "Player, Object" };
 
     private void Awake()
     {
-        _rbody = GetComponent<Rigidbody2D>();
-        _anim = GetComponent<Animator>();
-        _audioSource = GetComponent<AudioSource>();
+        InitByGetComponent();
     }
 
     private void Start()
     {
-        _canFire = true;
-        _beingMove = false;
-
-        _rbody.isKinematic = false;
-        _rbody.gravityScale = 0.0f;
-        _rbody.angularDrag = 0.0f;
-        _anim.SetBool("isGun", true);
-
-      //_audioSource.clip = _audioFootStep;
-      //_audioSource.Play();
-
-
+        InitMemberSetting();
     }
 
     public override void OnEpisodeBegin()
     {
-
-        _rbody.velocity = Vector2.zero;     
-        _canFire = true;
-        _tickLatency = 0.0f;
-        _currentHP = maxHP;
-
-    }
-
-    public override void CollectObservations(VectorSensor sensor)
-    {
-        
-        sensor.AddObservation(_rbody.velocity.x); // 1
-        sensor.AddObservation(_rbody.velocity.y); // 1
-
-        Vector3 direction = (_activator._randomCenterPoints[5] - transform.position);
-        direction.Normalize();
-        var nDistance = Vector3.Distance(transform.position, _activator._randomCenterPoints[5]) / mapDistance;
-
-        sensor.AddObservation(direction);// 3
-        sensor.AddObservation(nDistance);// 1
-
+        InitEpisodeSetting();
     }
 
     public override void OnActionReceived(ActionBuffers actions)
@@ -100,81 +56,20 @@ public class AIAgent : Agent, IDamageable
             return;
         }
 
-        Vector3 controlSignal = Vector3.zero;
-        controlSignal.x = actions.ContinuousActions[0];
-        controlSignal.y = actions.ContinuousActions[1];
-        controlSignal.Normalize();
-        
-        transform.rotation = Quaternion.Euler(new Vector3(0f, 0f, _angle));
-        _angle = AngleBetweenTwoPoints(transform.right, controlSignal);
-
-        if (_beingMove == false)
+        if (NetworkManager.Instance.IsEnd() == true)
         {
-            _rbody.velocity = ((controlSignal) * _basicSpeed);
-        }
-        SetReward(-0.001f);
-
-      //if (isOnRiver)
-      //{
-      //    _audioSource.clip = _audioFootStepInWater;
-      //    _audioSource.Play();
-      //}
-      //else
-      //{
-      //    _audioSource.clip = _audioFootStep;
-      //    _audioSource.Play();
-      //}
-                                                 
-                                                                
-        if (_canFire == false)                                  
-        {                                                       
-            _tickLatency += Time.deltaTime;                     
-        }                                                       
-                                                                
-        if(_tickLatency > AIAttackLatency)                      
-        {                                                       
-            _canFire = true;                                    
-            _tickLatency = 0.0f;                                
+            StopActionAndAudio();
+            return;
         }
 
+        MoveAndRotation(actions);
 
-        if(Vector3.Distance(transform.position, _activator._randomCenterPoints[5]) < objectDistance)
-        {
-            SetReward(1.0f);
-        }
+        CanFireTimer();
 
-        RaycastHit2D[] rayhit = Physics2D.CircleCastAll(transform.position, AIAttackRange, Vector2.left, 0.0f);
+        EpisodeEnding();
 
-        for (int i = 0; i < rayhit.Length; i++)
-        {
-            if (rayhit[i].collider != null)
-            {
-                if (rayhit[i].collider.CompareTag("Player") == true )
-                {
-                    if (_canFire == true)
-                    {
-                        TurnBodyAndShoot(rayhit[i].collider);
-                    }
-                }
-                else if(rayhit[i].collider.CompareTag("Dummy") == true)
-                {
-                    if (_canFire == true)
-                    {
-                        TurnBodyAndShoot(rayhit[i].collider);
-                    }
-                }
-                else if (rayhit[i].collider.CompareTag("AI") == true)
-                {
-                    if (Vector3.Distance(transform.position, rayhit[i].collider.transform.position) > MinAIAttackRange)
-                    {
-                        if (_canFire == true)
-                        {
-                            TurnBodyAndShoot(rayhit[i].collider);
-                        }
-                    }
-                }
-            }
-        }
+        FindObjectInArround();
+
     }
 
 
@@ -190,31 +85,143 @@ public class AIAgent : Agent, IDamageable
             SetReward(-0.1f);
         }
 
-        if (collision.gameObject.tag == "River")
-        {
-
-            isOnRiver = true;
-
-        }
 
     }
 
-    private void OnTriggerExit2D(Collider2D collision)
+    private void OnTriggerStay2D(Collider2D collision) // rigid -> never sleep option
     {
-
-        if (collision.tag == "River")
+        if (collision.CompareTag("River"))
         {
-            isOnRiver = false;
+            AllocWaterEffectWithTimer();
+        }
+
+
+        if (collision.tag == "Item")
+        {
+            AcquireItem(collision);
         }
     }
 
-    private void SetBeingMoveTrue()
+    public override void CollectObservations(VectorSensor sensor)
     {
+        sensor.AddObservation(_rbody.velocity.x); // 1
+        sensor.AddObservation(_rbody.velocity.y); // 1
+        Vector3 direction = (_activator._randomCenterPoints[5] - transform.position);
+        direction.Normalize();
+        var nDistance = Vector3.Distance(transform.position, _activator._randomCenterPoints[5]) / mapDistance;
+        sensor.AddObservation(direction);// 3
+        sensor.AddObservation(nDistance);// 1
+    }
+
+    private void InitByGetComponent()
+    {
+        _rbody = GetComponent<Rigidbody2D>();
+        _anim = GetComponent<Animator>();
+        _audioSource = GetComponent<AudioSource>();
+    }
+
+    private void InitMemberSetting()
+    {
+        _canFire = true;
         _beingMove = false;
+        _rbody.isKinematic = false;
+        _rbody.gravityScale = 0.0f;
+        _rbody.angularDrag = 0.0f;
+        _anim.SetBool("isGun", true);
     }
+
+    private void InitEpisodeSetting()
+    {
+        _rbody.velocity = Vector2.zero;
+        _canFire = true;
+        _tickLatency = 0.0f;
+        _currentHP = maxHP;
+    }
+
+    private void StopActionAndAudio()
+    {
+        _rbody.constraints = RigidbodyConstraints2D.FreezeAll;
+        _audioSource.Stop();
+    }
+
+    private void MoveAndRotation(ActionBuffers actions)
+    {
+        Vector3 controlSignal = Vector3.zero;
+        controlSignal.x = actions.ContinuousActions[0];
+        controlSignal.y = actions.ContinuousActions[1];
+        controlSignal.Normalize();
+
+        transform.rotation = Quaternion.Euler(new Vector3(0f, 0f, _angle));
+        _angle = AngleBetweenTwoPoints(transform.right, controlSignal);
+
+        if (_beingMove == false)
+        {
+            _rbody.velocity = ((controlSignal) * _basicSpeed);
+        }
+        SetReward(-0.001f);
+    }
+
+    private void CanFireTimer()
+    {
+        if (_canFire == false)
+        {
+            _tickLatency += Time.deltaTime;
+        }
+
+        if (_tickLatency > aiAttackLatency)
+        {
+            _canFire = true;
+            _tickLatency = 0.0f;
+        }
+    }
+
+    private void EpisodeEnding()
+    {
+        if (Vector3.Distance(transform.position, _activator._randomCenterPoints[5]) < objectDistance)
+        {
+            SetReward(1.0f);
+        }
+    }
+
+    private void FindObjectInArround()
+    {
+        RaycastHit2D[] rayhit = Physics2D.CircleCastAll(transform.position, aiAttackRange, Vector2.left, 0.0f);
+
+        for (int i = 0; i < rayhit.Length; i++)
+        {
+            if (rayhit[i].collider != null)
+            {
+                if (rayhit[i].collider.CompareTag("Player") == true)
+                {
+                    if (_canFire == true)
+                    {
+                        TurnBodyAndShoot(rayhit[i].collider);
+                    }
+                }
+                else if (rayhit[i].collider.CompareTag("Dummy") == true)
+                {
+                    if (_canFire == true)
+                    {
+                        TurnBodyAndShoot(rayhit[i].collider);
+                    }
+                }
+                else if (rayhit[i].collider.CompareTag("AI") == true)
+                {
+                    if (Vector3.Distance(transform.position, rayhit[i].collider.transform.position) > minAIAttackRange)
+                    {
+                        if (_canFire == true)
+                        {
+                            TurnBodyAndShoot(rayhit[i].collider);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private void OnDrawGizmos()
     {
-        Gizmos.DrawWireSphere(transform.position, AIAttackRange);
+        Gizmos.DrawWireSphere(transform.position, aiAttackRange);
     }
 
     public void TakeDamage(object[] ownerInfo, float damageToPlayer, float damageToObject, Vector2 startVector, bool isAttacker)
@@ -223,7 +230,14 @@ public class AIAgent : Agent, IDamageable
         if (_currentHP > 0)
         {
             _currentHP -= damageToPlayer;
-            ObjectPoolManager.AllocObject("Hit", transform.position + new Vector3((-1 * startVector).x, (-1 * startVector).y, 7));
+            if ((bool)ownerInfo[(int)InfoIdx.ISMAGNET] == false)
+            {
+                ObjectPoolManager.AllocObject("Hit", transform.position + new Vector3((-1 * startVector).x, (-1 * startVector).y, 7));
+                if (_audioSrcHit != null)
+                {
+                    _audioSource.PlayOneShot(_audioSrcHit);
+                }
+            }
         }
 
         if (_currentHP <= 0 && _isDead == false)
@@ -233,14 +247,13 @@ public class AIAgent : Agent, IDamageable
 
             if (PhotonNetwork.IsMasterClient == true)
             {
-                PlayerManager.NotifyDeathAI(_AIname, ownerInfo);
+                PlayerManager.Instance.NotifyDeathAI(_AIname, ownerInfo);
                 this.GetComponent<PhotonView>().RPC("RPC_Death", RpcTarget.AllBufferedViaServer, ownerInfo);
             }
 
         }
     }
-
-    float AngleBetweenTwoPoints(Vector3 a, Vector3 b)
+    private float AngleBetweenTwoPoints(Vector3 a, Vector3 b)
     {
         return Mathf.Atan2(a.y - b.y, a.x - b.x) * Mathf.Rad2Deg;
     }
@@ -260,56 +273,37 @@ public class AIAgent : Agent, IDamageable
 
         _canFire = false;
         _angle = AngleBetweenTwoPoints(transform.position, collision.transform.position);
-        Vector3 dir = new Vector3();
+        Vector2 dir = new Vector2();
         dir = (collision.transform.position - transform.position);
         dir.Normalize();
 
-        OwnerInfo bulletOwner = new OwnerInfo(_AIname, "");
+        OwnerInfo bulletOwner = new OwnerInfo(_AIname, "¾Ë ¼ö ¾ø´Â Èû", this.gameObject.GetPhotonView().ViewID);
 
-        if(dir == new Vector3(0, 0, 0))
-        {
-            return;
-        }
-
-        Shot(bulletOwner.GetObjects(), dir, transform.position, AIDamageToPlayer, AIDamageToObject, AIAttackRange, 0.0f, false);
+        Shot(bulletOwner.GetObjects(), dir, transform.position, aiDamageToPlayer, aiDamageToObject, aiAttackRange, 0.0f, false);
     }
 
-    private void OnTriggerStay2D(Collider2D collision) // rigid -> never sleep option
+    private void AllocWaterEffectWithTimer()
     {
-        if (collision.CompareTag("River"))
+        _tickTimerWaterEffect += Time.deltaTime;
+        if (_tickTimerWaterEffect > timerWaterEffect)
         {
-            _tickTimerWaterEffect += Time.deltaTime;
-            if (_tickTimerWaterEffect > timerWaterEffect)
-            {
-                _tickTimerWaterEffect = 0.0f;
-                ObjectPoolManager.AllocObject("WaterEffect", transform.position);
-            }
-        }
-
-
-        if (collision.tag == "Item")
-        {
-            Item target = null;
-            if (collision.TryGetComponent<Item>(out target))
-            {
-                target.gameObject.SetActive(false);
-                _beingMove = false;
-            }
-            else
-            {
-                Debug.Log("tartget is null in AI");
-            }
+            _tickTimerWaterEffect = 0.0f;
+            ObjectPoolManager.AllocObject("WaterEffect", transform.position);
         }
     }
 
-    private void OnCollisionEnter2D(Collision collision)
+    private void AcquireItem(Collider2D collision)
     {
-        if (collision.gameObject.CompareTag("Buliding"))
+        Item target = null;
+        
+        if (collision.TryGetComponent<Item>(out target))
         {
-            _beingMove = true;
-            Invoke("SetBeingMoveTrue", 1.0f);
-
-            _rbody.velocity = (collision.transform.position - transform.position) * _basicSpeed * -100 ;
+            NetworkManager.Instance.DisableItemByViewID(target.itemData.viewID);
+            _beingMove = false;
+        }
+        else
+        {
+            Debug.Log("tartget is null in AI");
         }
     }
 
@@ -358,7 +352,6 @@ public class AIAgent : Agent, IDamageable
     [PunRPC]
     public void RPC_Death(object[] enemyInfo)
     {
-        //PlayerManager.NotifyDeathAI(_AIname, enemyInfo);
         this.gameObject.SetActive(false);
     }
 

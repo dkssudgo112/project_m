@@ -81,6 +81,16 @@ MonoBehaviour:
   - RPC_RandomizeState
   - RPC_SendInRoom
   - RPC_ChangeAnim
+  - BreakThisObj
+  - RPC_UpdateMaxPlayer
+  - FogThrow
+  - GreThrow
+  - RPC_Load
+  - RPC_ReceiveMessage
+  - RPC_UpdatePlayerCount
+  - RPC_CallDropItemByMaster
+  - RPC_DecreaseAlive
+  - RPC_DecreasePlayerCount
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1

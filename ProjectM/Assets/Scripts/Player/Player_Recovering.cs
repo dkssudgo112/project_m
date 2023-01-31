@@ -8,15 +8,15 @@ public partial class Player
     //해당 아이템이 사용 가능한지 체크하고 사용 함수 호출
     public void CheckUsingItem(int slotIndex)
     {
-        if (_info.IsNullRecoverSlot(slotIndex) == true)
+        if (_info.IsNullRecoverySlot(slotIndex) == true)
         {
             Debug.Log($"Don't have RecoverItem[{slotIndex}]");
             return;
         }
 
-        if (CanUsingRecoveryItem(_info._recoverSlot[slotIndex]) == false)
+        if (CanUsingRecoveryItem(_info._recoverySlot[slotIndex]) == false)
         {
-            Debug.Log($"Can't Using RecoverItem[{_info._recoverSlot[slotIndex]}]");
+            Debug.Log($"Can't Using RecoverItem[{_info._recoverySlot[slotIndex]}]");
             return;
         }
 
@@ -32,17 +32,17 @@ public partial class Player
             return false;
         }
 
-        if (recovery.itemCount > 0)
+        if (recovery.itemData.itemCount > 0)
         {
-            if (recovery.recoverType == RecoverType.BAND || recovery.recoverType == RecoverType.KIT)
+            if (recovery.itemData.recoverType == RecoverType.BAND || recovery.itemData.recoverType == RecoverType.KIT)
             {
                 if (_info.IsMaxHP() == false)
                 {
                     return true;
                 }
-                Debug.Log("Your HP is full");
+                _info.HUD.CreateInformText(_info.GetCantRecoveryMessage());
             }
-            else if (recovery.recoverType == RecoverType.SODA || recovery.recoverType == RecoverType.DRUG)
+            else if (recovery.itemData.recoverType == RecoverType.SODA || recovery.itemData.recoverType == RecoverType.DRUG)
             {
                 return true;
             }
@@ -55,10 +55,10 @@ public partial class Player
     {
         StopAction();
         _state = State.RECOVERYING;
-        _info.HUD.SetActiveRecoveringView(true);
-        yield return new WaitForSeconds(_info._recoverSlot[slotIndex].usingLatency);
+        _info.HUD.PlayActionViewOn("회복 중...", _info._recoverySlot[slotIndex].itemData.usingLatency);
+        yield return new WaitForSeconds(_info._recoverySlot[slotIndex].itemData.usingLatency);
 
-        _info.UsingRecoveryItem(slotIndex);
+        _info.UseRecoveryItem(slotIndex);
         _state = State.LIVE;
     }
 }

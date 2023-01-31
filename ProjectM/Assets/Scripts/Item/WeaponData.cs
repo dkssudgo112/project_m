@@ -10,6 +10,7 @@ using UnityEngine;
 public class WeaponData 
 {
     [Header("Weapon 정보")]
+    public int id = 0;
     public float equipSpeedPenalty = 0f;
     public float atkSpeedPenalty = 0f;
     public float loadSpeedPenalty = 0f;
@@ -29,4 +30,26 @@ public class WeaponData
 
     [Header("WeaponThrow 정보")]
     public ThrowType throwType = ThrowType.NULL;
+
+    public void DeepCopy(WeaponData weaponData)
+    {
+        id = weaponData.id;
+        equipSpeedPenalty = weaponData.equipSpeedPenalty;
+        atkSpeedPenalty = weaponData.atkSpeedPenalty;
+        loadSpeedPenalty = weaponData.loadSpeedPenalty;
+        atkLatency = weaponData.atkLatency;
+        canAuto = weaponData.canAuto;
+        damageToPlayer = weaponData.damageToPlayer;
+        damageToObject = weaponData.damageToObject;
+        attackRange = weaponData.attackRange;
+        fallOff = weaponData.fallOff;
+
+        bulletType = weaponData.bulletType;
+        maxBullet = weaponData.maxBullet;
+        loadedTime = weaponData.loadedTime;
+        costBullet = weaponData.costBullet;
+        isBomb = weaponData.isBomb;
+
+        throwType = weaponData.throwType;
+    }
 }

@@ -27,8 +27,9 @@ public class ObjectPoolManager : MonoBehaviour
 	private List<GameObject> _spawnedObjects = new List<GameObject>();
 	// 각 오브젝트 단위의 오브젝트풀 큐 딕셔너리 
 	private Dictionary<string, Queue<GameObject>> _poolDictionary = new Dictionary<string, Queue<GameObject>>();
-	// 모든 아이템을 viewID를 Key 값으로 관리하는 딕셔너리 
+	// viewID를 Key 값으로 모든 아이템을 관리하는 딕셔너리 
 	private Dictionary<int, GameObject> _itemPoolDictionary = new Dictionary<int, GameObject>();
+	// 모든 아이템에 배정되는 viewID 
 	public int _viewID = 0;
 
 	private void Awake()
@@ -38,6 +39,7 @@ public class ObjectPoolManager : MonoBehaviour
 			Instance = this;
 		}
 	}
+
     private void Start()
 	{
 		CreateObjectPoolsOnStart();
@@ -45,15 +47,15 @@ public class ObjectPoolManager : MonoBehaviour
     
 	#region Item 클래스를 상속받은 GameObject 생성 함수 
 
-    public static GameObject AllocItem(string name, Vector3 position) =>
-		Instance.AllocItemFromPool(name, position, Quaternion.identity);
+    public static GameObject AllocItem(string name, int viewID, Vector3 position) =>
+		Instance.AllocItemFromPool(name, viewID, position, Quaternion.identity);
 
-	public static GameObject AllocItem(string name, Vector3 position, Quaternion rotation) =>
-		Instance.AllocItemFromPool(name, position, rotation);
+	public static GameObject AllocItem(string name, int viewID, Vector3 position, Quaternion rotation) =>
+		Instance.AllocItemFromPool(name, viewID, position, rotation);
 
-	public static T AllocItem<T>(string name, Vector3 position) where T : Component
+	public static T AllocItem<T>(string name, int viewID, Vector3 position) where T : Component
 	{
-		GameObject obj = Instance.AllocItemFromPool(name, position, Quaternion.identity);
+		GameObject obj = Instance.AllocItemFromPool(name, viewID, position, Quaternion.identity);
 
 		if (obj.TryGetComponent(out T component))
         {
@@ -66,9 +68,9 @@ public class ObjectPoolManager : MonoBehaviour
 		}
 	}
 
-	public static T AllocItem<T>(string name, Vector3 position, Quaternion rotation) where T : Component
+	public static T AllocItem<T>(string name, int viewID, Vector3 position, Quaternion rotation) where T : Component
 	{
-		GameObject obj = Instance.AllocItemFromPool(name, position, rotation);
+		GameObject obj = Instance.AllocItemFromPool(name, viewID, position, rotation);
 
 		if (obj.TryGetComponent(out T component))
         {
@@ -81,7 +83,7 @@ public class ObjectPoolManager : MonoBehaviour
 		}
 	}
 
-	private GameObject AllocItemFromPool(string name, Vector3 position, Quaternion rotation)
+	private GameObject AllocItemFromPool(string name, int viewID, Vector3 position, Quaternion rotation)
 	{
 		if (name == null)
         {
@@ -98,7 +100,7 @@ public class ObjectPoolManager : MonoBehaviour
 		// 해당 name의 큐가 비어있다면 새로 추가 
 		if (poolQueue.Count <= 0)
 		{
-			var obj = CreateNewItem(name, ItemManager.GetItemByName(name).gameObject);
+			var obj = CreateNewItem(name, viewID, ItemManager.GetItemByName(name).gameObject);
 
 			if (obj != null)
             {
@@ -119,11 +121,11 @@ public class ObjectPoolManager : MonoBehaviour
 		return objToSpawn;
 	}
 
-    #endregion
+	#endregion
 
-    #region Pool 클래스를 이용한 GameObject 생성 함수 
+	#region Pool 클래스를 이용한 GameObject 생성 함수 
 
-    public static GameObject AllocObject(string name, Vector3 position) =>
+	public static GameObject AllocObject(string name, Vector3 position) =>
 	Instance.AllocObjectFromPool(name, position, Quaternion.identity);
 
 	public static GameObject AllocObject(string name, Vector3 position, Quaternion rotation) =>
@@ -204,15 +206,10 @@ public class ObjectPoolManager : MonoBehaviour
 		return objToSpawn;
 	}
 
-    #endregion
+	#endregion
 
-    /// <summary>
-    /// name과 동일한 이름의 모든 pool을 List 형태로 반환 
-    /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
-    public static List<GameObject> GetAllPools(string name)
+	// name과 동일한 이름의 모든 pool을 List 형태로 반환
+	public static List<GameObject> GetAllPools(string name)
 	{
 		if(Instance._poolDictionary.ContainsKey(name) == false)
         {
@@ -222,13 +219,7 @@ public class ObjectPoolManager : MonoBehaviour
 		return Instance._spawnedObjects.FindAll(x => x.name == name);
 	}
 
-	/// <summary>
-	/// name과 동일한 이름의 모든 pool을 T 타입으로 변환해 List 형태로 반환 
-	/// </summary>
-	/// <typeparam name="T"></typeparam>
-	/// <param name="name"></param>
-	/// <returns></returns>
-	/// <exception cref="Exception"></exception>
+	// name과 동일한 이름의 모든 pool을 List 형태로 반환(Generic) 
 	public static List<T> GetAllPools<T>(string name) where T : Component
 	{
 		List<GameObject> objects = GetAllPools(name);
@@ -241,12 +232,13 @@ public class ObjectPoolManager : MonoBehaviour
 		return objects.ConvertAll(x => x.GetComponent<T>());
 	}
 
+	// 현재 Pool에 생성된 객체 중 viewID가 일치하는 게임오브젝트 반환 
 	public static GameObject GetItemByViewID(int viewID)
     {
 		return Instance._itemPoolDictionary[viewID];
     }
 
-	// 사용이 끝난 오브젝트를 Pool로 반환 
+	// 사용이 끝난 게임 오브젝트를 Pool로 반환 
 	public static void FreeObjectToPool(GameObject obj)
 	{
 		if (Instance._poolDictionary.ContainsKey(obj.name) == false)
@@ -267,7 +259,12 @@ public class ObjectPoolManager : MonoBehaviour
 		}
 	}
 
-	// Json을 통해 데이터 파싱 시 각 아이템별 Pool 생성 
+	/// <summary>
+	/// Json을 통해 데이터 파싱 시 각 아이템별 Pool 생성 
+	/// </summary>
+	/// <param name="name"></param>
+	/// <param name="item"></param>
+	/// <exception cref="Exception"></exception>
 	public static void AddNewItemPoolToPoolDic(string name, GameObject item)
 	{
 		if(item == null)
@@ -283,7 +280,10 @@ public class ObjectPoolManager : MonoBehaviour
 		Instance.ArrangePool(item);
 	}
 
-	// Start 시점에 ItemDictionary 내 모든 아이템풀을 Size 만큼 생성 
+	/// <summary>
+	/// ItemManager의 ItemDictionary 내 모든 아이템의 Pool을 stackSize만큼 생생 
+	/// </summary>
+	/// <exception cref="Exception"></exception>
 	public static void CreateItemPoolsOnStart()
 	{
 		foreach (var item in ItemManager.GetItemDic())
@@ -295,7 +295,7 @@ public class ObjectPoolManager : MonoBehaviour
 				throw new Exception($"Pool with name {item.Key} doesn't exist");
 			}
 
-			for (int i = 0; i < item.Value.stackSize; i++)
+			for (int i = 0; i < item.Value.itemData.poolSize; i++)
 			{
 				var obj = Instance.CreateNewItem(item.Key, item.Value.gameObject);
 
@@ -310,12 +310,15 @@ public class ObjectPoolManager : MonoBehaviour
 			}
 
 			// ReturnToPool 중복구현 검사
-			if (Instance._poolDictionary[item.Key].Count != item.Value.stackSize)
+			if (Instance._poolDictionary[item.Key].Count != item.Value.itemData.poolSize)
 				Debug.LogError($"{item.Key}에 ReturnToPool이 중복됩니다.");
 		}
 	}
 
-	// Start 시점에 pools 배열의 모든 요소 Pool 생성 
+	/// <summary>
+	/// ObjectPoolManageer의 pools 내 모든 오브젝트에 대해 Pool 생성 
+	/// </summary>
+	/// <exception cref="Exception"></exception>
 	public void CreateObjectPoolsOnStart()
 	{
 		foreach (Pool pool in _pools)
@@ -344,12 +347,13 @@ public class ObjectPoolManager : MonoBehaviour
 		}
 	}
 
+	// Item 클래스를 상속받은 GameObject 생성 함수 
 	private GameObject CreateNewItem(string name, GameObject prefab)
 	{
 		var obj = Instantiate(prefab, transform);
 		obj.name = name;
-		obj.GetComponent<Item>().viewID = ++_viewID;
-		_itemPoolDictionary.Add(obj.GetComponent<Item>().viewID, obj);
+		obj.GetComponent<Item>().itemData.viewID = ++_viewID;
+		_itemPoolDictionary.Add(obj.GetComponent<Item>().itemData.viewID, obj);
 
 		// 비활성화시 ReturnToPool을 하므로 Enqueue가 됨
 		obj.SetActive(false);
@@ -357,6 +361,20 @@ public class ObjectPoolManager : MonoBehaviour
 		return obj;
 	}
 
+	private GameObject CreateNewItem(string name, int viewID, GameObject prefab)
+	{
+		var obj = Instantiate(prefab, transform);
+		obj.name = name;
+		obj.GetComponent<Item>().itemData.viewID = viewID;
+		_itemPoolDictionary.Add(obj.GetComponent<Item>().itemData.viewID, obj);
+
+		// 비활성화시 ReturnToPool을 하므로 Enqueue가 됨
+		obj.SetActive(false);
+
+		return obj;
+	}
+
+	// Pool 클래스를 이용한 GameObject 생성 함수
 	private GameObject CreateNewObject(string name, GameObject prefab)
 	{
 		var obj = Instantiate(prefab, transform);
@@ -368,6 +386,10 @@ public class ObjectPoolManager : MonoBehaviour
 		return obj;
 	}
 
+	/// <summary>
+	/// Pool에 있는 객체들을 이름에 따라 정렬하고 리스트에 보관 
+	/// </summary>
+	/// <param name="obj"></param>
 	private void ArrangePool(GameObject obj)
 	{
 		// 추가된 오브젝트 묶어서 정렬
@@ -393,4 +415,14 @@ public class ObjectPoolManager : MonoBehaviour
 			}
 		}
 	}
+
+	public static int GetCurViewID()
+    {
+		return Instance._viewID;
+    }
+
+	public static void RaiseViewIDByOne()
+    {
+		Instance._viewID++;
+    }
 }

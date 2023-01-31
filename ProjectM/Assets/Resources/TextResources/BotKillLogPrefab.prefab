@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 2100952923203555401}
   - component: {fileID: 3452509938813219418}
   - component: {fileID: 3452509938813219419}
+  - component: {fileID: 2888149231227866133}
   m_Layer: 5
   m_Name: BotKillLogPrefab
   m_TagString: Untagged
@@ -199,7 +200,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0, g: 0, b: 0, a: 0.50980395}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -231,10 +232,8 @@ MonoBehaviour:
   _fadeOut: 1
   _fadeTime: 2
   _delayTime: 4
-  _imageMaxAlpha: 0.5
-  _textMaxAlpha: 1
-  _imageMinAlpha: 0
-  _textMinAlpha: 0
+  _maxAlpha: 1
+  _minAlpha: 0
 --- !u!114 &3452509938813219418
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -275,3 +274,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HorizontalFit: 2
   m_VerticalFit: 2
+--- !u!225 &2888149231227866133
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3452509938813219417}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
