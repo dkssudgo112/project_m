@@ -1,0 +1,146 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &4064075463496416440
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 91427546, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: sceneViewId
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1939119407, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: sceneViewId
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4035711635263990137, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: _magnetIn
+      value: 
+      objectReference: {fileID: 6635204020185024560}
+    - target: {fileID: 4035711635263990137, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: _photonView
+      value: 
+      objectReference: {fileID: 4064075463451389538}
+    - target: {fileID: 7237994872324223109, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: m_RootOrder
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7237994872324223109, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7237994872324223109, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7237994872324223109, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7237994872324223109, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7237994872324223109, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7237994872324223109, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7237994872324223109, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7237994872324223109, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7237994872324223109, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7237994872324223109, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7237994872324223111, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      propertyPath: m_Name
+      value: AIMagnet
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 4035711635263990137, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7237994872324223111, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4012653781408817223}
+  m_SourcePrefab: {fileID: 100100000, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+--- !u!114 &4064075463451389538 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 91427546, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+  m_PrefabInstance: {fileID: 4064075463496416440}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6635204020613827647}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &6635204020185024560 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7237994871960302728, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+  m_PrefabInstance: {fileID: 4064075463496416440}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &6635204020613827647 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7237994872324223111, guid: d904ae3cc82cb7644b911a7a202a2f62, type: 3}
+  m_PrefabInstance: {fileID: 4064075463496416440}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4012653781408817223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6635204020613827647}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9be5e594dc6ce7c48abe2ac1607ffee4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _magnetIn: {fileID: 6635204020185024560}
+  _localSizeMagnet:
+  - 10
+  - 5
+  - 2
+  - 1
+  - 0.5
+  - 0.25
+  _worldSizeMagnet:
+  - 300
+  - 150
+  - 60
+  - 30
+  - 15
+  - 7.5
+  _magnetPhazeTime:
+  - 40
+  - 20
+  - 10
+  - 10
+  - 5
+  _randomCenterPoints:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  _isStart: 0
+  _seed: 0

@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f3758f8f58fdef43803eb9be1df0608, type: 3}
+  m_Name: PhotonServerSettings
+  m_EditorClassIdentifier: 
+  AppSettings:
+    AppIdRealtime: da12d33e-3fe0-4406-8964-f5dd6f162ab3
+    AppIdFusion: 
+    AppIdChat: 
+    AppIdVoice: 
+    AppVersion: 
+    UseNameServer: 1
+    FixedRegion: 
+    Server: 
+    Port: 0
+    ProxyServer: 
+    Protocol: 0
+    EnableProtocolFallback: 1
+    AuthMode: 0
+    EnableLobbyStatistics: 0
+    NetworkLogging: 1
+  DevRegion: kr
+  PunLogging: 0
+  EnableSupportLogger: 0
+  RunInBackground: 1
+  StartInOfflineMode: 0
+  RpcList:
+  - ClickRpc
+  - CreateObject
+  - DeleteObject
+  - DestroyRpc
+  - DestroySpaceship
+  - Fire
+  - RespawnSpaceship
+  - RpcEndParticles
+  - RpcStartParticles
+  - SetSeed
+  - Shot
+  - StartOn
+  - RPC_EndParticles
+  - RPC_SetSeed
+  - RPC_StartOn
+  - RPC_StartParticles
+  - RPC_HandAttack
+  - Spawn
+  - RPC_SendSeed
+  - RPC_RequestSeed
+  - RPC_RespondSeed
+  - RPC_StartMag
+  - RPC_NotifyDeath
+  - RPC_UpdateAlive
+  - AIShot
+  - AIShot2
+  - RPC_NotifyKilledByYou
+  - RPC_NotifyPhase
+  - RPC_Shot
+  - RPC_ChangeAnimFalse
+  - RPC_ChangeAnimTrue
+  - RPC_Death
+  - RPC_DropItem
+  - RPC_SetCanDeactivateItemTrue
+  - RPC_SetCanDeactivateItem
+  - FlameShot
+  - RPC_ChangeAnimFist
+  - RPC_ChangeAnimGun
+  - RPC_ChangeAnimHammer
+  - RPC_Dead
+  - RPC_NotifyDeathAI
+  - RPC_DisableItemByViewID
+  - RPC_Send
+  - OnLoadingPanel
+  - RPC_RandomizeState
+  - RPC_SendInRoom
+  - RPC_ChangeAnim
+  DisableAutoOpenWizard: 1
+  ShowSettings: 0
+  DevRegionSetOnce: 1

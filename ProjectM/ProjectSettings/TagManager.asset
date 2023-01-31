@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags:
+  - Bullet
+  - Item
+  - Dummy
+  - River
+  - Buliding
+  - AI
+  - Outline
+  - FxTemporaire
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - Player
+  - Water
+  - UI
+  - Bullet
+  - Item
+  - ItemCollider
+  - Object
+  - Minimap
+  - Magnetic
+  - River
+  - AI
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: Minimap
+    uniqueID: 3258703475
+    locked: 0
+  - name: Floor
+    uniqueID: 4061810301
+    locked: 0
+  - name: Item
+    uniqueID: 3935444385
+    locked: 0
+  - name: Player
+    uniqueID: 1187805785
+    locked: 0
+  - name: Wall
+    uniqueID: 1969102745
+    locked: 0
+  - name: Bullet
+    uniqueID: 1575249881
+    locked: 0
+  - name: Object
+    uniqueID: 1647987347
+    locked: 0
+  - name: BombBullet
+    uniqueID: 663355231
+    locked: 0
+  - name: magnet
+    uniqueID: 4187183525
+    locked: 0
